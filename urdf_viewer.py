@@ -171,7 +171,7 @@ class URDFViewer(QMainWindow):
         btn_open.clicked.connect(self.open_urdf_file)
 
         # Create transparency controls
-        transparency_group = QGroupBox("Transparency")
+        transparency_group = QGroupBox("")
         transparency_layout = QVBoxLayout()
 
         # Transparency slider
