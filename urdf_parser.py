@@ -402,4 +402,53 @@ if __name__ == "__main__":
     
     chain = chains[0]
     
+    link_frames = chain["link_transforms"]
+    joint_axes = [[0, 0, 1]] + chain["joint_axes"]
+    link_names = chain["link_names"]
+
+
+
+    # Plot the link frames
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
     
+    axis_length = 0.1
+    # Plot each link frame
+    for name, T, axis in zip(link_names, link_frames, joint_axes):
+
+        # Extract position and orientation
+        pos = T[:3, 3]
+        rot = axis_length*T[:3, :3]@np.array(axis)
+
+        print(rot)
+        # Plot the frame
+        ax.quiver(pos[0], pos[1], pos[2], 
+                 rot[0], rot[1], rot[2], 
+                 color='b')
+        
+        # 绘制点
+        ax.scatter(pos[0], pos[1], pos[2], color='r', marker='o')
+
+        
+        # 字体大小
+        ax.text(pos[0], pos[1], pos[2], f"{name}", color='g', fontsize=10)
+        
+
+
+    # Set plot limits
+    ax.set_xlim([-0.5, 0.5])
+
+    ax.set_ylim([-0.5, 0.5])
+
+    ax.set_zlim([-1, 1])
+
+    # scale the same
+    ax.set_box_aspect([1, 1, 1])
+
+    
+    # Set labels
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    
+    plt.show()
