@@ -252,13 +252,17 @@ class URDFViewer(QMainWindow):
             # Parse the URDF file
             try:
                 parser = URDFParser(filename)
-                (
-                    link_names,
-                    link_mesh_files,
-                    link_mesh_transformations,
-                    link_frames,
-                    link_colors,
-                ) = parser.get_robot_info()
+                (link_names,
+                link_mesh_files,
+                link_mesh_transformations,
+                link_frames,
+                link_colors,
+                joint_names,
+                joint_frames,
+                joint_types,
+                joint_axes,
+                joint_parent_links,
+                joint_child_links) = parser.get_robot_info()
 
                 # Create models for each link
                 for i in range(len(link_names)):
