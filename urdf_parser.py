@@ -128,7 +128,13 @@ class URDFParser:
 
     def forward_kinematics(self):
         """Compute the transformations for all links"""
-        transformations = {"base_link": np.eye(4)}
+        
+        roots = self.build_multiple_trees()
+        
+        if len(roots) > 1:
+            print('Warning: Multiple roots are found, using the frist one')
+        
+        transformations = {roots[0].name: np.eye(4)}
 
         for joint in self.joints:
             parent = joint["parent"]
@@ -172,7 +178,6 @@ class URDFParser:
         # Process each link
         for name, T in transformations.items():
             link_info = self.links.get(name)
-            
             if link_info.get("mesh") is not None:
                 # Get mesh file path
                 mesh_file = link_info["mesh"]
@@ -570,6 +575,8 @@ class URDFParser:
         # https://zhuanlan.zhihu.com/p/285759868
         joint_positions, joint_vectors, joint_xs, joint_types = self.get_joint_axes(chain)
 
+
+        # skip fixed joints
         joint_positions = [joint_positions[i] for i, t in enumerate(joint_types) if t=='revolute' or t =='base']
         joint_vectors = [joint_vectors[i] for i, t in enumerate(joint_types) if t=='revolute' or t =='base']
         joint_xs = [joint_xs[i] for i, t in enumerate(joint_types) if t=='revolute' or t =='base']
@@ -699,15 +706,17 @@ if __name__ == "__main__":
     from mpl_toolkits.mplot3d import Axes3D
     import pybullet as p
     
-    urdf_path = "descriptions/urdf/gx7_test.urdf"
+    urdf_path = "descriptions/yumi/urdf/yumi.urdf"
     parser = URDFParser(urdf_path)
-    parser.print_chains()
+    
+    parser.get_robot_info()
+    # parser.print_chains()
 
-    chains, _ = parser.get_chain_info()
+    # chains, _ = parser.get_chain_info()
     
-    chain = chains[0]
+    # chain = chains[0]
     
-    parser.get_mdh_frames(chain)
+    # parser.get_mdh_frames(chain)
     
     # mdh_origins, mdh_zs, mdh_xs, mdh_parameters = parser.get_mdh_parameters(chain)
     

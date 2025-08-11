@@ -190,7 +190,8 @@ class URDFViewer(QMainWindow):
             self.clear_models()
 
             # Parse the URDF file
-            try:
+            # try:
+            if True:
                 parser = URDFParser(filename)
                 
                 # Get robot info for visualization
@@ -229,10 +230,10 @@ class URDFViewer(QMainWindow):
                 # Store the current URDF file path only after successful loading
                 self.current_urdf_file = filename
 
-            except Exception as e:
-                QMessageBox.critical(
-                    self, "Error", f"Failed to load URDF file: {str(e)}"
-                )
+            # except Exception as e:
+            #     QMessageBox.critical(
+            #         self, "Error", f"Failed to load URDF file: {str(e)}"
+            #     )
 
     def add_urdf_model(self, name, mesh_file, mesh_transform, frame, color):
         """Add a URDF model to the scene"""
