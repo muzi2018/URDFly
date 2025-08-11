@@ -9,14 +9,23 @@ class URDFModel:
         self.mesh_transform = mesh_transform  # 4x4 transformation matrix
         self.link_frame = link_frame
 
-        # Create the STL reader
-        self.reader = vtk.vtkSTLReader()
-        self.reader.SetFileName(mesh_file)
-        self.reader.Update()
+        # Create source for geometry
+        if mesh_file is None:
+            # Create a sphere source if no mesh file is provided
+            self.source = vtk.vtkSphereSource()
+            self.source.SetRadius(0.01)  # Small sphere with radius 0.02
+            self.source.SetPhiResolution(20)
+            self.source.SetThetaResolution(20)
+            self.source.Update()
+        else:
+            # Create the STL reader for mesh file
+            self.source = vtk.vtkSTLReader()
+            self.source.SetFileName(mesh_file)
+            self.source.Update()
 
         # Create mapper and actor
         self.mapper = vtk.vtkPolyDataMapper()
-        self.mapper.SetInputConnection(self.reader.GetOutputPort())
+        self.mapper.SetInputConnection(self.source.GetOutputPort())
 
         self.actor = vtk.vtkActor()
         self.actor.SetMapper(self.mapper)

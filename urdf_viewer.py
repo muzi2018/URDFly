@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QPushButton,
     QListWidget,
+    QListWidgetItem,
     QFileDialog,
     QLabel,
     QLineEdit,
@@ -27,6 +28,7 @@ from PyQt5.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QHeaderView,
+    QComboBox,
 )
 from PyQt5.QtCore import Qt
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
@@ -47,6 +49,7 @@ class URDFViewer(QMainWindow):
         self.chains = []  # List to store kinematic chains
         self.mdh_frames_actors = []  # List to store MDH frame actors
         self.selected_chain = None  # Currently selected chain
+        self.selected_chain_index = 0  # Index of the currently selected chain
         self.current_urdf_file = None  # Path to the currently loaded URDF file
         self.init_ui()
 
@@ -63,11 +66,23 @@ class URDFViewer(QMainWindow):
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
 
-        # Create chain tree widget instead of link list
-        self.chain_tree = QTreeWidget()
-        self.chain_tree.setHeaderLabel("Robot Chains and Links")
-        self.chain_tree.setSelectionMode(QTreeWidget.SingleSelection)
-        self.chain_tree.itemSelectionChanged.connect(self.on_tree_selection_changed)
+        # Create chain selection combo box
+        chain_selection_layout = QVBoxLayout()
+        chain_selection_layout.addWidget(QLabel("Select Chain:"))
+        self.chain_combo = QComboBox()
+        self.chain_combo.currentIndexChanged.connect(self.on_chain_selected)
+        chain_selection_layout.addWidget(self.chain_combo)
+        
+        # Create link list widget
+        chain_selection_layout.addWidget(QLabel("Links:"))
+        self.link_list = QListWidget()
+        self.link_list.setSelectionMode(QListWidget.SingleSelection)
+        self.link_list.itemSelectionChanged.connect(self.on_link_selection_changed)
+        chain_selection_layout.addWidget(self.link_list)
+        
+        # Create a widget to hold the chain selection layout
+        chain_selection_widget = QWidget()
+        chain_selection_widget.setLayout(chain_selection_layout)
 
         # Create button for opening URDF file
         btn_open = QPushButton("Open URDF")
@@ -112,7 +127,7 @@ class URDFViewer(QMainWindow):
 
         # Add widgets to left panel
         left_layout.addWidget(QLabel("Robot Structure:"))
-        left_layout.addWidget(self.chain_tree)
+        left_layout.addWidget(chain_selection_widget)
         left_layout.addWidget(btn_open)
         left_layout.addWidget(btn_mdh)
         left_layout.addWidget(transparency_group)
@@ -266,8 +281,9 @@ class URDFViewer(QMainWindow):
         # Clear the models list
         self.models = []
 
-        # Clear the tree widget
-        self.chain_tree.clear()
+        # Clear the combo box and link list
+        self.chain_combo.clear()
+        self.link_list.clear()
         
         # Clear MDH frames
         for actor in self.mdh_frames_actors:
@@ -282,66 +298,66 @@ class URDFViewer(QMainWindow):
         self.vtk_widget.GetRenderWindow().Render()
 
     def populate_chain_tree(self):
-        """Populate the chain tree with chains and links"""
-        self.chain_tree.clear()
+        """Populate the chain combo box and link list"""
+        self.chain_combo.clear()
+        self.link_list.clear()
         
-        # Create a dictionary to map link names to models
-        link_to_model = {model.name: model for model in self.models}
-        
-        # Add each chain as a top-level item
+        # Add each chain to the combo box
         for i, chain in enumerate(self.chains):
-            chain_item = QTreeWidgetItem(self.chain_tree)
-            chain_item.setText(0, f"Chain {i+1}: {chain['name']}")
-            chain_item.setData(0, Qt.UserRole, i)  # Store chain index
-            
-            # Add links as child items
-            for link_name in chain['link_names']:
-                link_item = QTreeWidgetItem(chain_item)
-                link_item.setText(0, link_name)
-                link_item.setData(0, Qt.UserRole, link_name)  # Store link name
+            self.chain_combo.addItem(f"Chain {i+1}: {chain['name']}", i)
         
-        # Expand all items
-        self.chain_tree.expandAll()
+        # Select the first chain by default if available
+        if self.chains:
+            self.selected_chain_index = 0
+            self.selected_chain = self.chains[0]
+            self.chain_combo.setCurrentIndex(0)
+            self.update_link_list()
 
-    def on_tree_selection_changed(self):
-        """Handle selection change in the chain tree"""
-        selected_items = self.chain_tree.selectedItems()
+    def on_chain_selected(self, index):
+        """Handle chain selection from combo box"""
+        if index >= 0 and index < len(self.chains):
+            # Unhighlight all models first
+            for model in self.models:
+                model.unhighlight()
+            
+            # Set the selected chain
+            self.selected_chain_index = index
+            self.selected_chain = self.chains[index]
+            
+            # Update the link list
+            self.update_link_list()
+            
+            # Update the rendering
+            self.vtk_widget.GetRenderWindow().Render()
+    
+    def update_link_list(self):
+        """Update the link list based on the selected chain"""
+        self.link_list.clear()
         
+        if self.selected_chain:
+            # Add links to the list
+            for link_name in self.selected_chain['link_names']:
+                item = QListWidgetItem(link_name)
+                item.setData(Qt.UserRole, link_name)
+                self.link_list.addItem(item)
+    
+    def on_link_selection_changed(self):
+        """Handle link selection from list"""
         # Unhighlight all models first
         for model in self.models:
             model.unhighlight()
         
-        # Reset selected chain
-        self.selected_chain = None
-        
-        if not selected_items:
-            # Update the rendering if no selection
-            self.vtk_widget.GetRenderWindow().Render()
-            return
-        
-        selected_item = selected_items[0]
-        parent = selected_item.parent()
-        
-        if parent is None:
-            # Chain is selected
-            chain_index = selected_item.data(0, Qt.UserRole)
-            self.selected_chain = self.chains[chain_index]
-            
-            # Highlight all links in the chain
-            for link_name in self.selected_chain['link_names']:
-                for model in self.models:
-                    if model.name == link_name:
-                        model.highlight()
-        else:
-            # Link is selected
-            link_name = selected_item.data(0, Qt.UserRole)
+        # Get selected link
+        selected_items = self.link_list.selectedItems()
+        if selected_items:
+            link_name = selected_items[0].data(Qt.UserRole)
             
             # Highlight the selected link
             for model in self.models:
                 if model.name == link_name:
                     model.highlight()
         
-        # Update the rendering to show the highlighting
+        # Update the rendering
         self.vtk_widget.GetRenderWindow().Render()
 
     def toggle_link_frames(self, state):
@@ -363,9 +379,9 @@ class URDFViewer(QMainWindow):
         # If MDH frames are not created yet and we want to show them
         if visible and not self.mdh_frames_actors and self.selected_chain and self.current_urdf_file:
             self.create_mdh_frames(self.selected_chain)
-        elif visible and (not self.selected_chain or not self.current_urdf_file):
+        elif visible and not self.current_urdf_file:
             QMessageBox.warning(
-                self, "Warning", "Please select a chain and load a URDF file first."
+                self, "Warning", "Please load a URDF file first."
             )
             self.cb_mdh_frames.setChecked(False)
             return

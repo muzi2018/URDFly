@@ -38,11 +38,17 @@ class URDFParser:
                             "color": self.parse_color(visual.find("material")),
                         }
                     else:
-                        self.links[link.get("name")] = None
+                        self.links[link.get("name")] = {
+                            "mesh": None,
+                        }
                 else:
-                    self.links[link.get("name")] = None
+                    self.links[link.get("name")] = {
+                            "mesh": None,
+                        }
             else:
-                self.links[link.get("name")] = None
+                self.links[link.get("name")] = {
+                            "mesh": None,
+                        }
 
         # Extract all joints
         for joint in root.findall("joint"):
@@ -166,29 +172,34 @@ class URDFParser:
         # Process each link
         for name, T in transformations.items():
             link_info = self.links.get(name)
-            if link_info is None or link_info.get("mesh") is None:
-                continue
+            
+            if link_info.get("mesh") is not None:
+                # Get mesh file path
+                mesh_file = link_info["mesh"]
+                if not os.path.isabs(mesh_file):
+                    mesh_file = os.path.join(self.mesh_dir, mesh_file)
+                mesh_file = os.path.normpath(mesh_file)
 
-            # Get mesh file path
-            mesh_file = link_info["mesh"]
-            if not os.path.isabs(mesh_file):
-                mesh_file = os.path.join(self.mesh_dir, mesh_file)
-            mesh_file = os.path.normpath(mesh_file)
+                # Apply the link's visual origin transformation
+                T_visual = self.compute_transformation(
+                    link_info["origin"]["rpy"], link_info["origin"]["xyz"]
+                )
 
-            # Apply the link's visual origin transformation
-            T_visual = self.compute_transformation(
-                link_info["origin"]["rpy"], link_info["origin"]["xyz"]
-            )
-
-            # Combine with the link's transformation
-            T_total = T @ T_visual
-
+                # Combine with the link's transformation
+                T_total = T @ T_visual
+                color = link_info["color"]
+    
+            else:
+                mesh_file = None
+                T_total = T
+                color = None
+            
             link_names.append(name)
             link_mesh_files.append(mesh_file)
             link_mesh_transformations.append(T_total)
             link_frames.append(T)
 
-            link_colors.append(link_info["color"])
+            link_colors.append(color)
             
         # Process each joint
         for joint in self.joints:
