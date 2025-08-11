@@ -570,6 +570,9 @@ class URDFParser:
         # https://zhuanlan.zhihu.com/p/285759868
         joint_positions, joint_vectors, joint_xs, joint_types = self.get_joint_axes(chain)
 
+        joint_positions = [joint_positions[i] for i, t in enumerate(joint_types) if t=='revolute' or t =='base']
+        joint_vectors = [joint_vectors[i] for i, t in enumerate(joint_types) if t=='revolute' or t =='base']
+        joint_xs = [joint_xs[i] for i, t in enumerate(joint_types) if t=='revolute' or t =='base']
 
         num_joints = len(joint_positions) - 1 # not base
         
