@@ -110,3 +110,14 @@ class URDFModel:
         axes.SetUserTransform(vtk_transform)
 
         return axes
+        
+    def remove_axes_actor(self):
+        """Remove the coordinate axes actor for this link"""
+        if hasattr(self, 'axes_actor') and self.axes_actor is not None:
+            # If the axes_actor is in a renderer, we need to remove it
+            # This assumes the renderer is accessible or the removal is handled elsewhere
+            
+            # Set the axes_actor to None to indicate it's been removed
+            self.axes_actor = None
+            return True
+        return False
