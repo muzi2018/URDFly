@@ -3,7 +3,7 @@ import vtk
 class URDFModel:
     """Class to represent a URDF link with its mesh and transformation"""
 
-    def __init__(self, name, mesh_file, mesh_transform, link_frame, color=None):
+    def __init__(self, name, mesh_file, mesh_transform, link_frame, color=None, axis_text=None):
         self.name = name
         self.mesh_file = mesh_file
         self.mesh_transform = mesh_transform  # 4x4 transformation matrix
@@ -42,7 +42,7 @@ class URDFModel:
         self.apply_transform(self.mesh_transform)
 
         # Create coordinate axes for this link
-        self.axes_actor = self.create_axes_actor(self.link_frame)
+        self.axes_actor, self.text_actor = self.create_axes_actor(self.link_frame, axis_text=axis_text)
 
     def set_random_color(self):
         """Set a random color for the model"""
@@ -95,29 +95,81 @@ class URDFModel:
         # Apply transparency to the actor
         self.actor.GetProperty().SetOpacity(transparency)
 
-    def create_axes_actor(self, transform_matrix):
-        """Create coordinate axes for this link"""
+    def create_axes_actor(self, transform_matrix, axis_length=0.05, cylinder_radius=0.02, axis_text=None):
+        """Create coordinate axes for this link with optional text at z-axis
+        
+        Args:
+            transform_matrix: 4x4 transformation matrix
+            axis_length: Length of the axes
+            cylinder_radius: Radius of the axis cylinders
+            axis_text: Text to display at the z-axis (None for no text)
+            
+        Returns:
+            tuple: (axes_actor, text_actor) - text_actor may be None if no text is specified
+        """
         # Create axes
         axes = vtk.vtkAxesActor()
-        axes.SetTotalLength(0.05, 0.05, 0.05)  # Set the length of the axes
+        axes.SetTotalLength(axis_length, axis_length, axis_length)  # Set the length of the axes
         axes.SetShaftType(0)
         axes.SetAxisLabels(0)
-        axes.SetCylinderRadius(0.02)
+        axes.SetCylinderRadius(cylinder_radius)
 
         # Create transform
         vtk_transform = vtk.vtkTransform()
         vtk_transform.SetMatrix(transform_matrix.flatten())
         axes.SetUserTransform(vtk_transform)
-
-        return axes
+        
+        # Create text actor if text is provided
+        text_actor = None
+        if axis_text is not None:
+            # Create a caption actor for the text
+            text_actor = vtk.vtkCaptionActor2D()
+            
+            # Set the text
+            text_actor.SetCaption(axis_text)
+            text_actor.GetTextActor().SetTextScaleModeToNone()
+            text_actor.GetCaptionTextProperty().SetFontSize(16)
+            text_actor.GetCaptionTextProperty().SetColor(0, 0, 1)  # Blue text
+            text_actor.GetCaptionTextProperty().SetBold(True)
+            
+            # Position the text at the end of the z-axis
+            # The attachment point is in world coordinates
+            # We need to transform the z-axis endpoint using the transform matrix
+            z_endpoint = [0, 0, axis_length, 1]  # Homogeneous coordinates for z-axis endpoint
+            
+            # Apply the transform to get the world coordinates
+            transformed_point = vtk_transform.TransformPoint(z_endpoint[0], z_endpoint[1], z_endpoint[2])
+            
+            # Set the attachment point
+            text_actor.SetAttachmentPoint(transformed_point[0], transformed_point[1], transformed_point[2])
+            
+            # Configure the caption
+            text_actor.BorderOff()
+            text_actor.LeaderOff()  # No leader line
+            
+            # Set the position of the text relative to the attachment point
+            text_actor.SetPadding(2)
+            
+        return axes, text_actor
         
     def remove_axes_actor(self):
-        """Remove the coordinate axes actor for this link"""
+        """Remove the coordinate axes actor and text actor for this link"""
+        removed = False
+        
         if hasattr(self, 'axes_actor') and self.axes_actor is not None:
             # If the axes_actor is in a renderer, we need to remove it
             # This assumes the renderer is accessible or the removal is handled elsewhere
             
             # Set the axes_actor to None to indicate it's been removed
             self.axes_actor = None
-            return True
-        return False
+            removed = True
+            
+        if hasattr(self, 'text_actor') and self.text_actor is not None:
+            # If the text_actor is in a renderer, we need to remove it
+            # This assumes the renderer is accessible or the removal is handled elsewhere
+            
+            # Set the text_actor to None to indicate it's been removed
+            self.text_actor = None
+            removed = True
+            
+        return removed

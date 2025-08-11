@@ -222,8 +222,8 @@ class URDFViewer(QMainWindow):
     def add_urdf_model(self, name, mesh_file, mesh_transform, frame, color):
         """Add a URDF model to the scene"""
         try:
-            # Create a new URDF model
-            model = URDFModel(name, mesh_file, mesh_transform, frame, color)
+            # Create a new URDF model with axis text (using link name as the text)
+            model = URDFModel(name, mesh_file, mesh_transform, frame, color, axis_text=name)
 
             # Apply current transparency setting to the new model
             if hasattr(self, "transparency_slider"):
@@ -239,9 +239,15 @@ class URDFViewer(QMainWindow):
             # Add the axes actor to the renderer
             self.renderer.AddActor(model.axes_actor)
             
+            # Add the text actor to the renderer if it exists
+            if model.text_actor is not None:
+                self.renderer.AddActor(model.text_actor)
+            
             # Set initial visibility based on checkbox
             if hasattr(self, "cb_link_frames"):
                 model.axes_actor.SetVisibility(self.cb_link_frames.isChecked())
+                if model.text_actor is not None:
+                    model.text_actor.SetVisibility(self.cb_link_frames.isChecked())
 
         except Exception as e:
             QMessageBox.warning(
@@ -254,6 +260,8 @@ class URDFViewer(QMainWindow):
         for model in self.models:
             self.renderer.RemoveActor(model.actor)
             self.renderer.RemoveActor(model.axes_actor)
+            if hasattr(model, 'text_actor') and model.text_actor is not None:
+                self.renderer.RemoveActor(model.text_actor)
 
         # Clear the models list
         self.models = []
@@ -337,11 +345,13 @@ class URDFViewer(QMainWindow):
         self.vtk_widget.GetRenderWindow().Render()
 
     def toggle_link_frames(self, state):
-        """Toggle visibility of link frames"""
+        """Toggle visibility of link frames and their text labels"""
         visible = state == Qt.Checked
         
         for model in self.models:
             model.axes_actor.SetVisibility(visible)
+            if hasattr(model, 'text_actor') and model.text_actor is not None:
+                model.text_actor.SetVisibility(visible)
         
         # Update the rendering
         self.vtk_widget.GetRenderWindow().Render()
