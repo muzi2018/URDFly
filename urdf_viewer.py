@@ -328,6 +328,10 @@ class URDFViewer(QMainWindow):
             # Update the link list
             self.update_link_list()
             
+            # Update MDH frames if they are currently visible
+            if self.cb_mdh_frames.isChecked() and self.current_urdf_file:
+                self.create_mdh_frames(self.selected_chain)
+            
             # Update the rendering
             self.vtk_widget.GetRenderWindow().Render()
     
@@ -377,19 +381,28 @@ class URDFViewer(QMainWindow):
         """Toggle visibility of MDH frames"""
         visible = state == Qt.Checked
         
-        # If MDH frames are not created yet and we want to show them
-        if visible and not self.mdh_frames_actors and self.selected_chain and self.current_urdf_file:
-            self.create_mdh_frames(self.selected_chain)
-        elif visible and not self.current_urdf_file:
-            QMessageBox.warning(
-                self, "Warning", "Please load a URDF file first."
-            )
-            self.cb_mdh_frames.setChecked(False)
-            return
-        
-        # Toggle visibility of existing MDH frames
-        for actor in self.mdh_frames_actors:
-            actor.SetVisibility(visible)
+        # If we want to show MDH frames
+        if visible:
+            if not self.current_urdf_file:
+                QMessageBox.warning(
+                    self, "Warning", "Please load a URDF file first."
+                )
+                self.cb_mdh_frames.setChecked(False)
+                return
+            
+            if self.selected_chain:
+                # Always recreate MDH frames to ensure they're up to date
+                self.create_mdh_frames(self.selected_chain)
+            else:
+                QMessageBox.warning(
+                    self, "Warning", "Please select a chain first."
+                )
+                self.cb_mdh_frames.setChecked(False)
+                return
+        else:
+            # Hide MDH frames
+            for actor in self.mdh_frames_actors:
+                actor.SetVisibility(False)
         
         # Update the rendering
         self.vtk_widget.GetRenderWindow().Render()
@@ -401,9 +414,25 @@ class URDFViewer(QMainWindow):
             self.renderer.RemoveActor(actor)
         self.mdh_frames_actors = []
         
-        # Get MDH frames from the parser
-        parser = URDFParser(self.current_urdf_file)  # Use the current URDF file
-        mdh_frames = parser.get_mdh_frames(chain)
+        # Create a fresh parser instance to ensure we get the latest data
+        parser = URDFParser(self.current_urdf_file)
+        
+        # Get chain information to ensure we have the latest chain data
+        chains, _ = parser.get_chain_info()
+        
+        # Find the matching chain in the updated chains list
+        current_chain = None
+        for c in chains:
+            if c['name'] == chain['name']:
+                current_chain = c
+                break
+        
+        # If we couldn't find a matching chain, use the provided chain
+        if current_chain is None:
+            current_chain = chain
+        
+        # Get MDH frames using the current chain
+        mdh_frames = parser.get_mdh_frames(current_chain)
         
         # Create axes actors for each MDH frame
         for frame in mdh_frames:
@@ -456,9 +485,25 @@ class URDFViewer(QMainWindow):
         table.setColumnCount(5)  # Joint, theta, d, a, alpha
         table.setHorizontalHeaderLabels(["Joint", "θ (rad)", "d", "a", "α (rad)"])
         
-        # Get MDH parameters
-        parser = URDFParser(self.current_urdf_file)  # Use the current URDF file
-        _, _, _, mdh_parameters = parser.get_mdh_parameters(self.selected_chain)
+        # Create a fresh parser instance to ensure we get the latest MDH parameters
+        parser = URDFParser(self.current_urdf_file)
+        
+        # Get chain information to ensure we have the latest chain data
+        chains, _ = parser.get_chain_info()
+        
+        # Find the matching chain in the updated chains list
+        current_chain = None
+        for chain in chains:
+            if chain['name'] == self.selected_chain['name']:
+                current_chain = chain
+                break
+        
+        # If we couldn't find a matching chain, use the selected chain
+        if current_chain is None:
+            current_chain = self.selected_chain
+        
+        # Get MDH parameters using the current chain
+        _, _, _, mdh_parameters = parser.get_mdh_parameters(current_chain)
         
         # Set row count
         table.setRowCount(len(mdh_parameters))
