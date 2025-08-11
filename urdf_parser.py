@@ -395,7 +395,7 @@ class URDFParser:
         Returns a dictionary with joint names as keys and axis vectors as values.
         """
         link_frames = chain["link_transforms"]
-        joint_axes = [[0, 0, 1]] + chain["joint_axes"] # 第一个joint的axis是固定的base
+        joint_axes = [[0, 0, 1]] + chain["joint_axes"] # 第一个joint的axis是固定的base，默认为z向上
         joint_types = ['base'] + chain["joint_types"]
         link_names = chain["link_names"]
         
@@ -426,11 +426,10 @@ class URDFParser:
             joint_vectors.append(joint_vector)
             joint_xs.append(joint_x)
 
-
         
         return joint_positions, joint_vectors, joint_xs, joint_types
     
-    def calculate_origin_position(self, joint_pos, joint_vector, joint_pos_next, joint_vector_next):
+    def calculate_mdh_origin_position(self, joint_pos, joint_vector, joint_pos_next, joint_vector_next):
 
         """
         计算相邻两个关节坐标系原点oi的位置
@@ -529,6 +528,28 @@ class URDFParser:
             
             return oi, 'skew', common_perpendicular
 
+
+    def get_mdh_frames(self, chain):
+        mdh_origins, mdh_zs, mdh_xs, mdh_parameters = self.get_mdh_parameters(chain)
+        
+        mdh_frames = []
+        
+        for origin, z, x in zip(mdh_origins, mdh_zs, mdh_xs):
+            y = np.cross(z, x)
+            
+            transform = np.eye(4)
+            
+            transform[:3, 3] = origin
+            
+            transform[:3, 0] = x
+            transform[:3, 1] = y
+            transform[:3, 2] = z
+            
+            mdh_frames.append(transform)
+        
+        return mdh_frames
+        
+
             
     def get_mdh_parameters(self, chain):
         """
@@ -559,7 +580,7 @@ class URDFParser:
 
             # 建立第i个坐标系的原点oi
             
-            oi, case, common_perpendicular = self.calculate_origin_position(joint_pos, joint_vector, joint_pos_next, joint_vector_next)
+            oi, case, common_perpendicular = self.calculate_mdh_origin_position(joint_pos, joint_vector, joint_pos_next, joint_vector_next)
             mdh_cases.append(case)
 
             
@@ -672,59 +693,61 @@ if __name__ == "__main__":
     
     chain = chains[0]
     
-    mdh_origins, mdh_zs, mdh_xs, mdh_parameters = parser.get_mdh_parameters(chain)
+    parser.get_mdh_frames(chain)
+    
+    # mdh_origins, mdh_zs, mdh_xs, mdh_parameters = parser.get_mdh_parameters(chain)
     
 
-    # pretty print mdh
-    print("MDH Parameters:")
-    print('id\ttheta\td\ta\talpha')
+    # # pretty print mdh
+    # print("MDH Parameters:")
+    # print('id\ttheta\td\ta\talpha')
 
-    for i, params in enumerate(mdh_parameters):
-        print(f"{i}\t{params[0]:.4f}\t{params[1]:.4f}\t{params[2]:.4f}\t{params[3]:.4f}")
+    # for i, params in enumerate(mdh_parameters):
+    #     print(f"{i}\t{params[0]:.4f}\t{params[1]:.4f}\t{params[2]:.4f}\t{params[3]:.4f}")
 
-    import roboticstoolbox as rtb
+    # import roboticstoolbox as rtb
     
-    mdh_config = []
-    for i, params in enumerate(mdh_parameters):
-        theta, d, a, alpha = params
+    # mdh_config = []
+    # for i, params in enumerate(mdh_parameters):
+    #     theta, d, a, alpha = params
 
-        mdh_config.append(rtb.RevoluteMDH(d=d, a=a, alpha=alpha, offset=theta))
-
-
-    
-    robot = rtb.DHRobot(
-    mdh_config, name="gx7")
-    
-    q = [0.3]*7
-    
-    T = robot.fkine(q).data[0]
-
-    pos = T[:3, 3]
-    
-    ori = T[:3, :3]
-
-    
-    
-    p.connect(p.DIRECT)
-    
-    robot_id = p.loadURDF(urdf_path, useFixedBase=True)
-    
-    valid_joints = []
-    for i in range(p.getNumJoints(robot_id)):
-        info = p.getJointInfo(robot_id, i)
-        if info[2] == p.JOINT_REVOLUTE:
-            valid_joints.append(i)
+    #     mdh_config.append(rtb.RevoluteMDH(d=d, a=a, alpha=alpha, offset=theta))
 
 
-    for i, joint_position in zip(valid_joints, q):
-        p.setJointMotorControl2(robot_id, i, p.POSITION_CONTROL, joint_position)
+    
+    # robot = rtb.DHRobot(
+    # mdh_config, name="gx7")
+    
+    # q = [0.3]*7
+    
+    # T = robot.fkine(q).data[0]
+
+    # pos = T[:3, 3]
+    
+    # ori = T[:3, :3]
+
+    
+    
+    # p.connect(p.DIRECT)
+    
+    # robot_id = p.loadURDF(urdf_path, useFixedBase=True)
+    
+    # valid_joints = []
+    # for i in range(p.getNumJoints(robot_id)):
+    #     info = p.getJointInfo(robot_id, i)
+    #     if info[2] == p.JOINT_REVOLUTE:
+    #         valid_joints.append(i)
+
+
+    # for i, joint_position in zip(valid_joints, q):
+    #     p.setJointMotorControl2(robot_id, i, p.POSITION_CONTROL, joint_position)
         
-    for i in range(200):
-        p.stepSimulation()
+    # for i in range(200):
+    #     p.stepSimulation()
         
-    link_state = p.getLinkState(robot_id, 6)
-    position = link_state[4]  # Position of the link
-    orientation = link_state[5]  # Orientation of the link (quaternion)
+    # link_state = p.getLinkState(robot_id, 6)
+    # position = link_state[4]  # Position of the link
+    # orientation = link_state[5]  # Orientation of the link (quaternion)
 
-    orientation = p.getMatrixFromQuaternion(orientation)
+    # orientation = p.getMatrixFromQuaternion(orientation)
 
