@@ -388,67 +388,343 @@ class URDFParser:
             chain_info_list.append(detailed_info)
         
         return chain_info_list, trees
-            
     
+    def get_joint_axes(self, chain):
+        """
+        Get the axis of each joint in the chain of the URDF.
+        Returns a dictionary with joint names as keys and axis vectors as values.
+        """
+        link_frames = chain["link_transforms"]
+        joint_axes = [[0, 0, 1]] + chain["joint_axes"] # 第一个joint的axis是固定的base
+        joint_types = ['base'] + chain["joint_types"]
+        link_names = chain["link_names"]
+        
+        joint_positions = []
+        joint_vectors = []
+        joint_xs = []
+        
+        for name, T, axis, joint_type in zip(link_names, link_frames, joint_axes, joint_types):
+
+            # Extract position and orientation
+            pos = T[:3, 3]
+            rot = T[:3, :3]@np.array(axis)
+            
+            if np.allclose(np.abs(np.array(axis)), np.array([0, 0, 1])): # z axis rotation
+                joint_x = T[:3, :3]@np.array([1, 0, 0])
+            
+            if np.allclose(np.abs(np.array(axis)), np.array([0, 1, 0])): # y axis rotation
+                joint_x = T[:3, :3]@np.array([1, 0, 0])
+                
+            if np.allclose(np.abs(np.array(axis)), np.array([1, 0, 0])): # x axis rotation
+                joint_x = T[:3, :3]@np.array([0, 1, 0])
+
+
+            joint_pos = pos
+            joint_vector = rot
+            
+            joint_positions.append(joint_pos)
+            joint_vectors.append(joint_vector)
+            joint_xs.append(joint_x)
+
+
+        
+        return joint_positions, joint_vectors, joint_xs, joint_types
+    
+    def calculate_origin_position(self, joint_pos, joint_vector, joint_pos_next, joint_vector_next):
+
+        """
+        计算相邻两个关节坐标系原点oi的位置
+        
+        参数:
+            joint_pos: 第i个关节的位置 (3D向量)
+            joint_vector: 第i个关节的向量 (单位向量)
+            joint_pos_next: 第i+1个关节的位置 (3D向量)
+            joint_vector_next: 第i+1个关节的向量 (单位向量)
+        
+        返回:
+            oi: 坐标系原点位置 (3D向量)
+            case: 情况分类 (1-4)
+            common_perpendicular: 公垂线信息 (起点, 终点), 若无则为None
+        """
+        # 确保输入是numpy数组
+        zi = np.asarray(joint_vector)
+        zi_next = np.asarray(joint_vector_next)
+        pi = np.asarray(joint_pos)
+        pi_next = np.asarray(joint_pos_next)
+        
+        common_perpendicular = None
+        
+        # 情况1: zi和zi+1重合 (向量相同或相反)
+        if np.allclose(np.cross(zi, zi_next), np.zeros(3)):
+            # 两条线重合或平行
+            # 检查是否在同一直线上
+            diff_pos = pi_next - pi
+            if np.allclose(np.cross(diff_pos, zi), np.zeros(3)):
+                # 在同一直线上，返回pi作为原点
+                return pi, 'coincident', None
+
+            else:
+                # 平行但不重合，进入情况3
+                pass
+        else:
+            # 检查是否相交
+            # 计算两条直线的最短距离
+            cross_z = np.cross(zi, zi_next)
+            diff_pos = pi_next - pi
+            distance = np.abs(np.dot(diff_pos, cross_z)) / np.linalg.norm(cross_z)
+            
+            if np.isclose(distance, 0):
+                # 情况2: 相交
+                # 解方程组找到交点
+                A = np.column_stack((zi, -zi_next))
+                b = pi_next - pi
+                t, s = np.linalg.lstsq(A, b, rcond=None)[0]
+                oi = pi + t * zi
+                # The common perpendicular is the intersection point itself
+                common_perpendicular = (oi, oi)
+                return oi, 'intersect', common_perpendicular
+
+        
+        # 情况3: 平行或情况4: 不相交也不平行
+        # 计算公垂线
+        
+        # 向量垂直于zi和zi_next
+        n = np.cross(zi, zi_next)
+        
+        if np.allclose(n, np.zeros(3)):
+            # 情况3: 平行
+            # 计算两条平行线之间的最短距离
+            diff_pos = pi_next - pi
+            perpendicular_vec = np.cross(zi, np.cross(diff_pos, zi))
+            perpendicular_vec = perpendicular_vec / np.linalg.norm(perpendicular_vec)
+            
+            # 计算从pi到pi_next的向量在垂直于zi方向的分量
+            t = np.dot(diff_pos, perpendicular_vec) / np.dot(perpendicular_vec, perpendicular_vec)
+            
+            # 公垂线与zi的交点
+            oi = pi  # 直接使用pi作为原点，即公垂线与zi的交点
+            
+            # 计算公垂线的两个端点
+            point1 = pi
+            point2 = pi_next - np.dot(pi_next - pi, zi) * zi
+            common_perpendicular = (point1, point2)
+            
+            return oi, 'parallel', common_perpendicular
+
+        else:
+            # 情况4: 不相交也不平行 (异面直线)
+            n = n / np.linalg.norm(n)
+            
+            # 建立方程组
+            A = np.column_stack((zi, -zi_next, n))
+            b = pi_next - pi
+            t, s, _ = np.linalg.lstsq(A, b, rcond=None)[0]
+            # 公垂线与zi的交点
+            oi = pi + t * zi
+            
+            # 计算公垂线的两个端点
+            point1 = pi + t * zi
+            point2 = pi_next + s * zi_next
+            common_perpendicular = (point1, point2)
+            
+            return oi, 'skew', common_perpendicular
+
+            
+    def get_mdh_parameters(self, chain):
+        """
+        Get the MDH parameters of the chain.
+        Returns a list of dictionaries, each containing the MDH parameters of a joint.
+        """
+        # https://zhuanlan.zhihu.com/p/285759868
+        joint_positions, joint_vectors, joint_xs, joint_types = self.get_joint_axes(chain)
+
+
+        num_joints = len(joint_positions) - 1 # not base
+        
+        mdh_origins = []
+        mdh_zs = []
+        mdh_xs = []
+        mdh_cases = []
+    
+        for i in range(num_joints):
+
+            # zi
+            joint_pos = joint_positions[i]
+            joint_vector = joint_vectors[i]
+            joint_x = joint_xs[i]
+
+            # zi+1
+            joint_pos_next = joint_positions[i+1]
+            joint_vector_next = joint_vectors[i+1]
+
+            # 建立第i个坐标系的原点oi
+            
+            oi, case, common_perpendicular = self.calculate_origin_position(joint_pos, joint_vector, joint_pos_next, joint_vector_next)
+            mdh_cases.append(case)
+
+            
+            mdh_origins.append(oi)
+            mdh_zs.append(joint_vector)
+            
+            if case == 'coincident':
+                xi = joint_x
+
+            if case == 'skew' or case == 'intersect':
+
+                xi = np.cross(joint_vector, joint_vector_next)
+                xi = xi / np.linalg.norm(xi)
+                
+            if case == 'parallel':
+                xi = np.cross(joint_vector, common_perpendicular[1] - common_perpendicular[0])
+                xi = xi / np.linalg.norm(xi)
+
+            mdh_xs.append(xi)
+
+        # 最后一个joint
+        mdh_origins.append(joint_positions[-1])
+        mdh_zs.append(joint_vectors[-1])
+        mdh_xs.append(joint_xs[-1])
+
+        mdh_parameters = []
+
+        for i in range(num_joints):
+            
+            # oi-1
+            o_prev = mdh_origins[i]
+            # zi-1, unit vector from oi-1
+            z_prev = mdh_zs[i]
+            # xi-1, unit vector from oi-1
+            x_prev = mdh_xs[i]
+
+            # oi
+            oi = mdh_origins[i+1]
+            # zi, unit vector from oi
+            zi = mdh_zs[i+1]
+            # xi, unit vector from oi
+            xi = mdh_xs[i+1]
+            
+            case = mdh_cases[i]
+
+            # theta, 绕着zi轴，从xi-1转动到xi的角度
+               
+            # d, 沿着zi轴，从xi-1到xi的距离
+            
+            # a，沿着xi-1轴，从zi-1到zi的距离
+                
+            # alpha, 绕着xi-1轴，从zi-1转动到zi的角度
+            
+            
+            """theta"""          
+            # Project xi-1 and xi onto the plane perpendicular to zi
+            p_prev = x_prev - np.dot(x_prev, zi) * zi
+            pi = xi - np.dot(xi, zi) * zi
+                
+            # Normalize the projected vectors
+            pi_norm = pi / np.linalg.norm(pi)
+            p_prev_norm = p_prev / np.linalg.norm(p_prev)
+            
+            # Calculate cosine and sine of the angle
+            cos_theta = np.dot(p_prev_norm, pi_norm)
+            sin_theta = np.dot(np.cross(p_prev_norm, pi_norm), zi)
+            
+            # Compute the directed angle using arctan2
+            theta = np.arctan2(sin_theta, cos_theta)
+            
+            """d"""
+            d = (oi - o_prev).dot(zi)
+            
+            """a"""
+            a = (oi - o_prev).dot(x_prev)
+        
+            """alpha"""
+            # Project zi-1 and zi onto the plane perpendicular to xi-1
+            p_prev = z_prev - np.dot(z_prev, x_prev) * x_prev
+            pi = zi - np.dot(zi, x_prev) * x_prev
+            
+            # Normalize the projected vectors
+            pi_norm = pi / np.linalg.norm(pi)
+            p_prev_norm = p_prev / np.linalg.norm(p_prev)
+            
+            # Calculate cosine and sine of the angle
+            cos_theta = np.dot(p_prev_norm, pi_norm)
+            sin_theta = np.dot(np.cross(p_prev_norm, pi_norm), x_prev)
+            
+            # Compute the directed angle using arctan2
+            alpha = np.arctan2(sin_theta, cos_theta)            
+            
+            mdh_parameters.append([theta, d, a, alpha])
+
+        # 最后一个joint的x轴
+        return mdh_origins, mdh_zs, mdh_xs, mdh_parameters
+
 
 if __name__ == "__main__":
     
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
-    parser = URDFParser("descriptions/urdf/gx7_test.urdf")
+    import pybullet as p
+    
+    urdf_path = "descriptions/urdf/gx7_test.urdf"
+    parser = URDFParser(urdf_path)
     parser.print_chains()
 
     chains, _ = parser.get_chain_info()
     
     chain = chains[0]
     
-    link_frames = chain["link_transforms"]
-    joint_axes = [[0, 0, 1]] + chain["joint_axes"]
-    link_names = chain["link_names"]
-
-
-
-    # Plot the link frames
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
+    mdh_origins, mdh_zs, mdh_xs, mdh_parameters = parser.get_mdh_parameters(chain)
     
-    axis_length = 0.1
-    # Plot each link frame
-    for name, T, axis in zip(link_names, link_frames, joint_axes):
 
-        # Extract position and orientation
-        pos = T[:3, 3]
-        rot = axis_length*T[:3, :3]@np.array(axis)
+    # pretty print mdh
+    print("MDH Parameters:")
+    print('id\ttheta\td\ta\talpha')
 
-        print(rot)
-        # Plot the frame
-        ax.quiver(pos[0], pos[1], pos[2], 
-                 rot[0], rot[1], rot[2], 
-                 color='b')
-        
-        # 绘制点
-        ax.scatter(pos[0], pos[1], pos[2], color='r', marker='o')
+    for i, params in enumerate(mdh_parameters):
+        print(f"{i}\t{params[0]:.4f}\t{params[1]:.4f}\t{params[2]:.4f}\t{params[3]:.4f}")
 
-        
-        # 字体大小
-        ax.text(pos[0], pos[1], pos[2], f"{name}", color='g', fontsize=10)
-        
+    import roboticstoolbox as rtb
+    
+    mdh_config = []
+    for i, params in enumerate(mdh_parameters):
+        theta, d, a, alpha = params
 
+        mdh_config.append(rtb.RevoluteMDH(d=d, a=a, alpha=alpha, offset=theta))
 
-    # Set plot limits
-    ax.set_xlim([-0.5, 0.5])
-
-    ax.set_ylim([-0.5, 0.5])
-
-    ax.set_zlim([-1, 1])
-
-    # scale the same
-    ax.set_box_aspect([1, 1, 1])
 
     
-    # Set labels
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
+    robot = rtb.DHRobot(
+    mdh_config, name="gx7")
     
-    plt.show()
+    q = [0.3]*7
+    
+    T = robot.fkine(q).data[0]
+
+    pos = T[:3, 3]
+    
+    ori = T[:3, :3]
+
+    
+    
+    p.connect(p.DIRECT)
+    
+    robot_id = p.loadURDF(urdf_path, useFixedBase=True)
+    
+    valid_joints = []
+    for i in range(p.getNumJoints(robot_id)):
+        info = p.getJointInfo(robot_id, i)
+        if info[2] == p.JOINT_REVOLUTE:
+            valid_joints.append(i)
+
+
+    for i, joint_position in zip(valid_joints, q):
+        p.setJointMotorControl2(robot_id, i, p.POSITION_CONTROL, joint_position)
+        
+    for i in range(200):
+        p.stepSimulation()
+        
+    link_state = p.getLinkState(robot_id, 6)
+    position = link_state[4]  # Position of the link
+    orientation = link_state[5]  # Orientation of the link (quaternion)
+
+    orientation = p.getMatrixFromQuaternion(orientation)
+
