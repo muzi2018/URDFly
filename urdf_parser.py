@@ -770,21 +770,33 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
     import pybullet as p
+    import sys
+    sys.path.append('templates')
+    import fk_python_template
     
-    urdf_path = "dex-urdf-main/dex-urdf-main/robots/hands/shadow_hand/shadow_hand_right.urdf"
+    urdf_path = "descriptions/gx7/urdf/gx7_test.urdf"
+
     parser = URDFParser(urdf_path)
     
     parser.get_robot_info()
     parser.print_chains()
 
-    # chains, _ = parser.get_chain_info()
+    chains, _ = parser.get_chain_info()
     
-    # chain = chains[0]
+    chain = chains[0]
     
-    # parser.get_mdh_frames(chain)
+    parser.get_mdh_frames(chain)
     
-    # mdh_origins, mdh_zs, mdh_xs, mdh_parameters = parser.get_mdh_parameters(chain)
+    mdh_origins, mdh_zs, mdh_xs, mdh_parameters = parser.get_mdh_parameters(chain)
     
+    fk = fk_python_template.FK_SYM(mdh_parameters)
+
+    qs = [0.1] * fk.num_joints
+    
+    # global pos and rot
+    global_pos_rot = fk.return_global_pos_rot(*qs)
+    print("global_pos=\n", global_pos_rot[:3, -1])
+    print("global_rot=\n", global_pos_rot[:3, :3])
 
     # # pretty print mdh
     # print("MDH Parameters:")
@@ -793,27 +805,31 @@ if __name__ == "__main__":
     # for i, params in enumerate(mdh_parameters):
     #     print(f"{i}\t{params[0]:.4f}\t{params[1]:.4f}\t{params[2]:.4f}\t{params[3]:.4f}")
 
-    # import roboticstoolbox as rtb
+    import roboticstoolbox as rtb
     
-    # mdh_config = []
-    # for i, params in enumerate(mdh_parameters):
-    #     theta, d, a, alpha = params
+    mdh_config = []
+    for i, params in enumerate(mdh_parameters):
+        theta, d, a, alpha = params
 
-    #     mdh_config.append(rtb.RevoluteMDH(d=d, a=a, alpha=alpha, offset=theta))
+        mdh_config.append(rtb.RevoluteMDH(d=d, a=a, alpha=alpha, offset=theta))
 
 
     
-    # robot = rtb.DHRobot(
-    # mdh_config, name="gx7")
+    robot = rtb.DHRobot(
+    mdh_config, name="gx7")
     
-    # q = [0.3]*7
+    q = [0.1]*7
     
-    # T = robot.fkine(q).data[0]
+    T = robot.fkine(q).data[0]
 
-    # pos = T[:3, 3]
+    pos = T[:3, 3]
     
-    # ori = T[:3, :3]
+    ori = T[:3, :3]
+    
+    print('RTB')
+    print("pos=\n", pos)
 
+    print("ori=\n", ori)
     
     
     # p.connect(p.DIRECT)
