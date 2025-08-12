@@ -24,58 +24,58 @@ MDH参数使用四个参数来描述相邻两个关节之间的变换关系：
 
 | 参数 | 符号 | 描述 |
 |------|------|------|
-| **θ (theta)** | θᵢ | 绕Zᵢ轴，从Xᵢ₋₁转到Xᵢ的角度 |
-| **d** | dᵢ | 沿Zᵢ轴，从Xᵢ₋₁到Xᵢ的距离 |
-| **a** | aᵢ₋₁ | 沿Xᵢ₋₁轴，从Zᵢ₋₁到Zᵢ的距离 |
-| **α (alpha)** | αᵢ₋₁ | 绕Xᵢ₋₁轴，从Zᵢ₋₁转到Zᵢ的角度 |
+| **θ (theta)** | $\theta_i$ | 绕$Z_i$轴，从$X_{i-1}$转到$X_i$的角度 |
+| **d** | $d_i$ | 沿$Z_i$轴，从$X_{i-1}$到$X_i$的距离 |
+| **a** | $a_{i-1}$ | 沿$X_{i-1}$轴，从$Z_{i-1}$到$Z_i$的距离 |
+| **α (alpha)** | $\alpha_{i-1}$ | 绕$X_{i-1}$轴，从$Z_{i-1}$转到$Z_i$的角度 |
 
 ### MDH变换矩阵
 
 从坐标系{i-1}到坐标系{i}的变换矩阵为：
 
-```
-T(i-1,i) = Rot_z(θᵢ) × Trans_z(dᵢ) × Trans_x(aᵢ₋₁) × Rot_x(αᵢ₋₁)
-```
+$$T_{i-1}^{i} = \text{Rot}_z(\theta_i) \times \text{Trans}_z(d_i) \times \text{Trans}_x(a_{i-1}) \times \text{Rot}_x(\alpha_{i-1})$$
 
 展开后的4×4变换矩阵为：
 
-```
-[ cos(θᵢ)              -sin(θᵢ)             0              aᵢ₋₁        ]
-[ sin(θᵢ)cos(αᵢ₋₁)    cos(θᵢ)cos(αᵢ₋₁)   -sin(αᵢ₋₁)    -sin(αᵢ₋₁)dᵢ ]
-[ sin(θᵢ)sin(αᵢ₋₁)    cos(θᵢ)sin(αᵢ₋₁)    cos(αᵢ₋₁)     cos(αᵢ₋₁)dᵢ  ]
-[ 0                    0                    0              1           ]
-```
+$$
+T_{i-1}^{i} = \begin{bmatrix}
+\cos(\theta_i) & -\sin(\theta_i) & 0 & a_{i-1} \\
+\sin(\theta_i)\cos(\alpha_{i-1}) & \cos(\theta_i)\cos(\alpha_{i-1}) & -\sin(\alpha_{i-1}) & -\sin(\alpha_{i-1})d_i \\
+\sin(\theta_i)\sin(\alpha_{i-1}) & \cos(\theta_i)\sin(\alpha_{i-1}) & \cos(\alpha_{i-1}) & \cos(\alpha_{i-1})d_i \\
+0 & 0 & 0 & 1
+\end{bmatrix}
+$$
 
 ## 坐标系建立规则
 
 ### 基本原则
 
-1. **Z轴定义**：Zᵢ轴沿着关节i+1的旋转轴
-2. **原点定义**：坐标系{i}的原点Oᵢ位于Zᵢ和Zᵢ₊₁的公垂线与Zᵢ的交点
-3. **X轴定义**：Xᵢ轴沿着Zᵢ和Zᵢ₊₁的公垂线，从Zᵢ指向Zᵢ₊₁
+1. **Z轴定义**：$Z_i$轴沿着关节$i+1$的旋转轴
+2. **原点定义**：坐标系$\{i\}$的原点$O_i$位于$Z_i$和$Z_{i+1}$的公垂线与$Z_i$的交点
+3. **X轴定义**：$X_i$轴沿着$Z_i$和$Z_{i+1}$的公垂线，从$Z_i$指向$Z_{i+1}$
 
 ### 两轴关系的四种情况
 
-根据相邻两个Z轴（Zᵢ和Zᵢ₊₁）的空间关系，可分为四种情况：
+根据相邻两个Z轴（$Z_i$和$Z_{i+1}$）的空间关系，可分为四种情况：
 
 #### 情况1：两轴重合 (Coincident)
 
-- **特征**：Zᵢ和Zᵢ₊₁在同一直线上
+- **特征**：$Z_i$和$Z_{i+1}$在同一直线上
 - **原点选择**：可任意选择在轴上
 - **X轴选择**：垂直于Z轴即可，方向任意
 
 #### 情况2：两轴相交 (Intersect)
 
-- **特征**：Zᵢ和Zᵢ₊₁相交于一点
+- **特征**：$Z_i$和$Z_{i+1}$相交于一点
 - **原点选择**：选在交点处
-- **X轴选择**：Xᵢ = (Zᵢ × Zᵢ₊₁) / |Zᵢ × Zᵢ₊₁|
+- **X轴选择**：$X_i = \frac{Z_i \times Z_{i+1}}{|Z_i \times Z_{i+1}|}$
 
 #### 情况3：两轴平行 (Parallel)
 
-- **特征**：Zᵢ和Zᵢ₊₁平行但不重合
-- **原点选择**：直接选择Zᵢ的原点（从urdf中获取）为$O_i$
+- **特征**：$Z_i$和$Z_{i+1}$平行但不重合
+- **原点选择**：直接选择$Z_i$的原点（从urdf中获取）为$O_i$
 
-- **X轴选择**：从$O_i$找到两平行轴间最短线段与$Z_{i+1}$的交点为$P_i$。然后Xi的方向由$P_i - O_i$确定。
+- **X轴选择**：从$O_i$找到两平行轴间最短线段与$Z_{i+1}$的交点为$P_i$。然后$X_i$的方向由$P_i - O_i$确定。
 
 示意图如下：
 
@@ -83,9 +83,9 @@ T(i-1,i) = Rot_z(θᵢ) × Trans_z(dᵢ) × Trans_x(aᵢ₋₁) × Rot_x(αᵢ�
 
 #### 情况4：两轴异面 (Skew)
 
-- **特征**：Zᵢ和Zᵢ₊₁既不平行也不相交
-- **原点选择**：公垂线与Zᵢ的交点
-- **X轴选择**：Xᵢ = (Zᵢ × Zᵢ₊₁) / |Zᵢ × Zᵢ₊₁|
+- **特征**：$Z_i$和$Z_{i+1}$既不平行也不相交
+- **原点选择**：公垂线与$Z_i$的交点
+- **X轴选择**：$X_i = \frac{Z_i \times Z_{i+1}}{|Z_i \times Z_{i+1}|}$
 
 ## MDH参数计算
 
@@ -131,6 +131,15 @@ T(i-1,i) = Rot_z(θᵢ) × Trans_z(dᵢ) × Trans_x(aᵢ₋₁) × Rot_x(αᵢ�
    theta = atan2(sin_theta, cos_theta)
    ```
 
+   数学表达式：
+   $$\theta_i = \text{atan2}(\sin\theta_i, \cos\theta_i)$$
+
+   其中：
+   - $\cos\theta_i = \hat{p}_{prev} \cdot \hat{p}_i$
+   - $\sin\theta_i = (\hat{p}_{prev} \times \hat{p}_i) \cdot Z_i$
+   - $\hat{p}_{prev} = \frac{X_{i-1} - (X_{i-1} \cdot Z_i)Z_i}{|X_{i-1} - (X_{i-1} \cdot Z_i)Z_i|}$
+   - $\hat{p}_i = \frac{X_i - (X_i \cdot Z_i)Z_i}{|X_i - (X_i \cdot Z_i)Z_i|}$
+
    **d - 连杆偏移**：
 
    ```python
@@ -138,12 +147,18 @@ T(i-1,i) = Rot_z(θᵢ) × Trans_z(dᵢ) × Trans_x(aᵢ₋₁) × Rot_x(αᵢ�
    d = dot(oi - o_prev, zi)
    ```
 
+   数学表达式：
+   $$d_i = (O_i - O_{i-1}) \cdot Z_i$$
+
    **a - 连杆长度**：
 
    ```python
    # 沿xi-1轴从zi-1到zi的距离
    a = dot(oi - o_prev, x_prev)
    ```
+
+   数学表达式：
+   $$a_{i-1} = (O_i - O_{i-1}) \cdot X_{i-1}$$
 
    **α (alpha) - 连杆扭转**：
 
@@ -157,6 +172,15 @@ T(i-1,i) = Rot_z(θᵢ) × Trans_z(dᵢ) × Trans_x(aᵢ₋₁) × Rot_x(αᵢ�
    sin_alpha = dot(cross(p_prev_norm, pi_norm), x_prev)
    alpha = atan2(sin_alpha, cos_alpha)
    ```
+
+   数学表达式：
+   $$\alpha_{i-1} = \text{atan2}(\sin\alpha_{i-1}, \cos\alpha_{i-1})$$
+
+   其中：
+   - $\cos\alpha_{i-1} = \hat{q}_{prev} \cdot \hat{q}_i$
+   - $\sin\alpha_{i-1} = (\hat{q}_{prev} \times \hat{q}_i) \cdot X_{i-1}$
+   - $\hat{q}_{prev} = \frac{Z_{i-1} - (Z_{i-1} \cdot X_{i-1})X_{i-1}}{|Z_{i-1} - (Z_{i-1} \cdot X_{i-1})X_{i-1}|}$
+   - $\hat{q}_i = \frac{Z_i - (Z_i \cdot X_{i-1})X_{i-1}}{|Z_i - (Z_i \cdot X_{i-1})X_{i-1}|}$
 
 ## 特殊情况处理
 
@@ -179,8 +203,6 @@ def calculate_common_perpendicular(zi, zi_next, pi, pi_next):
     
     # 平行线情况
     elif parallel:
-        perpendicular_vec = cross(zi, cross(pi_next - pi, zi))
-        perpendicular_vec = perpendicular_vec / norm(perpendicular_vec)
         point1 = pi
         point2 = pi_next - dot(pi_next - pi, zi) * zi
         return (point1, point2)
@@ -196,9 +218,9 @@ def calculate_common_perpendicular(zi, zi_next, pi, pi_next):
 
 对于第一个连杆：
 
-- **Z₀轴**：通常选择为垂直向上（[0, 0, 1]），但这不是唯一选择
-- **X₀轴**：可以任意选择，只要垂直于Z₀
-- **原点O₀**：通常选在基座中心，但也可以根据需要调整
+- **$Z_0$轴**：通常选择为垂直向上（$[0, 0, 1]^T$），但这不是唯一选择
+- **$X_0$轴**：可以任意选择，只要垂直于$Z_0$
+- **原点$O_0$**：通常选在基座中心，但也可以根据需要调整
 
 **任意性的原因**：
 
@@ -209,9 +231,9 @@ def calculate_common_perpendicular(zi, zi_next, pi, pi_next):
 
 对于最后一个连杆：
 
-- **Zₙ轴**：沿最后一个关节的旋转轴
-- **Xₙ轴**：由于没有"下一个"关节，X轴的选择具有任意性
-- **原点Oₙ**：通常选在末端执行器的工作点
+- **$Z_n$轴**：沿最后一个关节的旋转轴
+- **$X_n$轴**：由于没有"下一个"关节，X轴的选择具有任意性
+- **原点$O_n$**：通常选在末端执行器的工作点
 
 **任意性的原因**：
 
@@ -386,6 +408,13 @@ mdh_parameters = [
     [0, 0, 0, 0]       # joint2: θ₂=0, d₂=0, a₁=0, α₁=0
 ]
 ```
+
+对应的MDH参数表：
+
+| 关节 | $\theta_i$ | $d_i$ | $a_{i-1}$ | $\alpha_{i-1}$ |
+|------|------------|-------|-----------|----------------|
+| 1    | $\theta_1$ (变量) | 0.1 | 0.5 | 0 |
+| 2    | $\theta_2$ (变量) | 0 | 0 | 0 |
 
 ### 示例2：验证MDH参数
 
