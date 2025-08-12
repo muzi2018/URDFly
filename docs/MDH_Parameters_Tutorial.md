@@ -75,11 +75,11 @@ T(i-1,i) = Rot_z(θᵢ) × Trans_z(dᵢ) × Trans_x(aᵢ₋₁) × Rot_x(αᵢ�
 - **特征**：Zᵢ和Zᵢ₊₁平行但不重合
 - **原点选择**：直接选择Zᵢ的原点（从urdf中获取）为$O_i$
 
-- **X轴选择**：从$O_i$找到两平行轴间最短线段与$Z_{i+1}$的交点为$P_i$。然后Xi的方向由$Z_i\times (P_i - O_i)$决定。
+- **X轴选择**：从$O_i$找到两平行轴间最短线段与$Z_{i+1}$的交点为$P_i$。然后Xi的方向由$P_i - O_i$确定。
 
 示意图如下：
 
-<img src="assets/mdh_paralle.png" alt="" width="70%" >
+<img src="assets/mdh_parallel.png" alt="" width="70%" >
 
 #### 情况4：两轴异面 (Skew)
 
