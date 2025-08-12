@@ -30,6 +30,7 @@ from PyQt5.QtWidgets import (
     QTableWidgetItem,
     QHeaderView,
     QComboBox,
+    QScrollArea,
 )
 from PyQt5.QtCore import Qt
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
@@ -148,9 +149,15 @@ class URDFViewer(QMainWindow):
         # Create VTK widget for 3D visualization
         self.vtk_widget = QVTKRenderWindowInteractor()
 
-        # Create joint control group
-        joint_group = QGroupBox("Joint Controls")
-        self.joint_layout = QVBoxLayout(joint_group)
+        # Create a scroll area for joint controls
+        joint_scroll_area = QScrollArea()
+        joint_scroll_area.setWidgetResizable(True)
+        joint_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        joint_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        
+        # Create a widget to hold all joint controls
+        self.joint_container = QWidget()
+        self.joint_layout = QVBoxLayout(self.joint_container)
         
         # Add a label explaining the sliders
         joint_label = QLabel("Adjust joint angles (-π to π):")
@@ -158,9 +165,16 @@ class URDFViewer(QMainWindow):
         
         # We'll add sliders dynamically when a URDF is loaded
         
+        # Set the container as the scroll area's widget
+        joint_scroll_area.setWidget(self.joint_container)
+        
+        # Create a group box to contain the scroll area
+        joint_group = QGroupBox("Joint Controls")
+        joint_group_layout = QVBoxLayout(joint_group)
+        joint_group_layout.addWidget(joint_scroll_area)
+        
         # Add joint group to right panel
-        right_layout.addWidget(joint_group)
-        right_layout.addStretch()
+        right_layout.addWidget(joint_group, 1)  # Give it a stretch factor of 1
         
         # Set fixed width for right panel
         right_panel.setFixedWidth(300)
@@ -603,6 +617,9 @@ class URDFViewer(QMainWindow):
             joint_box = QGroupBox(joint['name'])
             joint_box_layout = QVBoxLayout(joint_box)
             
+            # Create a horizontal layout for slider and value label
+            slider_layout = QHBoxLayout()
+            
             # Create a slider
             slider = QSlider(Qt.Horizontal)
             slider.setMinimum(-314)  # -π in hundredths
@@ -613,13 +630,18 @@ class URDFViewer(QMainWindow):
             
             # Create a label to show the current value
             value_label = QLabel("0.00")
+            value_label.setMinimumWidth(40)  # Set minimum width to ensure consistent alignment
+            value_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # Right-align the text
             
             # Connect the slider to update function
             slider.valueChanged.connect(lambda val, idx=i, label=value_label: self.update_joint_angle(val, idx, label))
             
-            # Add slider and label to the joint box
-            joint_box_layout.addWidget(slider)
-            joint_box_layout.addWidget(value_label)
+            # Add slider and label to the horizontal layout
+            slider_layout.addWidget(slider, 1)  # Give slider a stretch factor of 1
+            slider_layout.addWidget(value_label)
+            
+            # Add the horizontal layout to the joint box
+            joint_box_layout.addLayout(slider_layout)
             
             # Add the joint box to the joint layout
             self.joint_layout.addWidget(joint_box)
