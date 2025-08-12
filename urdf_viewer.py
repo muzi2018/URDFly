@@ -160,7 +160,7 @@ class URDFViewer(QMainWindow):
         self.joint_layout = QVBoxLayout(self.joint_container)
         
         # Add a label explaining the sliders
-        joint_label = QLabel("Adjust joint angles (-π to π):")
+        joint_label = QLabel("Adjust joint angles:")
         self.joint_layout.addWidget(joint_label)
         
         # We'll add sliders dynamically when a URDF is loaded
@@ -169,8 +169,19 @@ class URDFViewer(QMainWindow):
         joint_scroll_area.setWidget(self.joint_container)
         
         # Create a group box to contain the scroll area
-        joint_group = QGroupBox("Joint Controls")
+        joint_group = QGroupBox("Joints Control")
         joint_group_layout = QVBoxLayout(joint_group)
+        
+        # Add reset and random buttons
+        buttons_layout = QHBoxLayout()
+        btn_reset = QPushButton("Reset")
+        btn_reset.clicked.connect(self.reset_joints)
+        btn_random = QPushButton("Random")
+        btn_random.clicked.connect(self.randomize_joints)
+        buttons_layout.addWidget(btn_reset)
+        buttons_layout.addWidget(btn_random)
+        joint_group_layout.addLayout(buttons_layout)
+        
         joint_group_layout.addWidget(joint_scroll_area)
         
         # Add joint group to right panel
@@ -675,6 +686,31 @@ class URDFViewer(QMainWindow):
         
         # Store the value
         self.joint_values[index] = angle
+        
+        # Update the model
+        self.update_model_with_joint_angles()
+    
+    def reset_joints(self):
+        """Reset all joints to zero position"""
+        if not self.joint_sliders or not self.joint_values:
+            return
+            
+        # Set all sliders to zero
+        for i, slider in enumerate(self.joint_sliders):
+            slider.setValue(0)
+        
+        # Update the model
+        self.update_model_with_joint_angles()
+    
+    def randomize_joints(self):
+        """Set all joints to random values"""
+        if not self.joint_sliders or not self.joint_values:
+            return
+            
+        # Set all sliders to random values between min and max
+        for i, slider in enumerate(self.joint_sliders):
+            random_value = np.random.randint(slider.minimum(), slider.maximum())
+            slider.setValue(random_value)
         
         # Update the model
         self.update_model_with_joint_angles()
