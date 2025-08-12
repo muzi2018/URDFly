@@ -33,6 +33,7 @@ from PyQt5.QtWidgets import (
     QScrollArea,
     QDesktopWidget,
 )
+from xml_editor import XMLEditor
 from PyQt5.QtCore import Qt
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 import vtk
@@ -108,6 +109,11 @@ class URDFViewer(QMainWindow):
         # Create button for opening URDF file
         btn_open = QPushButton("Open URDF")
         btn_open.clicked.connect(self.open_urdf_file)
+        
+        # Create Edit button
+        btn_edit = QPushButton("Edit URDF")
+        btn_edit.clicked.connect(self.edit_urdf_file)
+        btn_edit.setToolTip("Open the current URDF file in an XML editor")
 
         # Create MDH button
         btn_mdh = QPushButton("Show MDH Parameters")
@@ -150,6 +156,7 @@ class URDFViewer(QMainWindow):
         left_layout.addWidget(QLabel("Robot Structure:"))
         left_layout.addWidget(chain_selection_widget)
         left_layout.addWidget(btn_open)
+        left_layout.addWidget(btn_edit)
         left_layout.addWidget(btn_mdh)
         left_layout.addWidget(transparency_group)
         left_layout.addWidget(visibility_group)
@@ -774,6 +781,18 @@ class URDFViewer(QMainWindow):
         
         # Update the rendering
         self.vtk_widget.GetRenderWindow().Render()
+    
+    def edit_urdf_file(self):
+        """Open the current URDF file in the XML editor"""
+        if not self.current_urdf_file:
+            QMessageBox.warning(
+                self, "Warning", "Please load a URDF file first."
+            )
+            return
+        
+        # Create and show the XML editor window
+        self.editor = XMLEditor(self.current_urdf_file)
+        self.editor.show()
     
     def closeEvent(self, event):
         """Handle window close event"""
