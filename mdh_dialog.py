@@ -228,12 +228,13 @@ class MDHDialog(QDialog):
         vertical_splitter = QSplitter(Qt.Vertical)
         
         # Top section for .h header file
-        header_group = QGroupBox(".h Header File")
+        header_group = QGroupBox("Header File or Python Usage")
+
         header_layout = QVBoxLayout(header_group)
         
         # Add copy button for header
         header_button_layout = QHBoxLayout()
-        self.btn_copy_header = QPushButton("Copy Header")
+        self.btn_copy_header = QPushButton("Copy")
         self.btn_copy_header.clicked.connect(self.on_copy_header)
         header_button_layout.addWidget(self.btn_copy_header)
         header_button_layout.addStretch()
@@ -241,7 +242,7 @@ class MDHDialog(QDialog):
         
         self.header_text_edit = QTextEdit()
         self.header_text_edit.setReadOnly(True)
-        self.header_text_edit.setPlaceholderText("Header file content will be displayed here...")
+        self.header_text_edit.setPlaceholderText("Header file or Python usage content will be displayed here...")
         # Set monospace font for code
         font = QFont("Consolas", 10)
         font.setStyleHint(QFont.Monospace)
@@ -256,7 +257,7 @@ class MDHDialog(QDialog):
         
         # Add copy button for cpp
         cpp_button_layout = QHBoxLayout()
-        self.btn_copy_cpp = QPushButton("Copy Source")
+        self.btn_copy_cpp = QPushButton("Copy")
         self.btn_copy_cpp.clicked.connect(self.on_copy_cpp)
         cpp_button_layout.addWidget(self.btn_copy_cpp)
         cpp_button_layout.addStretch()
