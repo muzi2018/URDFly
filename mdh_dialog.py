@@ -13,11 +13,119 @@ from PyQt5.QtWidgets import (
     QLabel,
     QSplitter,
     QWidget,
-    QGroupBox
+    QGroupBox,
+    QFileDialog,
+    QMessageBox,
+    QApplication
 )
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QSyntaxHighlighter
 
-from templates import fk_python_template
+from codegen import forward_kinematics, dynamic_base_regressor
+import re
+
+
+class CppSyntaxHighlighter(QSyntaxHighlighter):
+    """Syntax highlighter for C/C++ code"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        # Define highlighting rules
+        self.highlighting_rules = []
+        
+        # Keywords
+        keyword_format = QTextCharFormat()
+        keyword_format.setForeground(QColor(86, 156, 214))  # Blue
+        keyword_format.setFontWeight(QFont.Bold)
+        keywords = [
+            'auto', 'break', 'case', 'char', 'const', 'continue', 'default',
+            'do', 'double', 'else', 'enum', 'extern', 'float', 'for', 'goto',
+            'if', 'inline', 'int', 'long', 'register', 'restrict', 'return',
+            'short', 'signed', 'sizeof', 'static', 'struct', 'switch', 'typedef',
+            'union', 'unsigned', 'void', 'volatile', 'while', 'class', 'namespace',
+            'template', 'public', 'private', 'protected', 'using', 'virtual',
+            'override', 'final', 'nullptr', 'new', 'delete', 'try', 'catch',
+            'throw', 'bool', 'true', 'false', 'std'
+        ]
+        for keyword in keywords:
+            pattern = r'\b' + keyword + r'\b'
+            self.highlighting_rules.append((pattern, keyword_format))
+        
+        # Class names
+        class_format = QTextCharFormat()
+        class_format.setForeground(QColor(78, 201, 176))  # Cyan
+        class_format.setFontWeight(QFont.Bold)
+        self.highlighting_rules.append((r'\bclass\s+\w+', class_format))
+        
+        # Functions
+        function_format = QTextCharFormat()
+        function_format.setForeground(QColor(220, 220, 170))  # Yellow
+        self.highlighting_rules.append((r'\b[A-Za-z0-9_]+(?=\()', function_format))
+        
+        # Numbers
+        number_format = QTextCharFormat()
+        number_format.setForeground(QColor(181, 206, 168))  # Light green
+        self.highlighting_rules.append((r'\b[0-9]+\.?[0-9]*[fFlL]?\b', number_format))
+        
+        # Strings
+        string_format = QTextCharFormat()
+        string_format.setForeground(QColor(214, 157, 133))  # Orange
+        self.highlighting_rules.append((r'"[^"\\]*(\\.[^"\\]*)*"', string_format))
+        self.highlighting_rules.append((r"'[^'\\]*(\\.[^'\\]*)*'", string_format))
+        
+        # Single line comments
+        single_comment_format = QTextCharFormat()
+        single_comment_format.setForeground(QColor(106, 153, 85))  # Green
+        self.highlighting_rules.append((r'//[^\n]*', single_comment_format))
+        
+        # Multi-line comments
+        self.multi_line_comment_format = QTextCharFormat()
+        self.multi_line_comment_format.setForeground(QColor(106, 153, 85))  # Green
+        
+        # Preprocessor
+        preprocessor_format = QTextCharFormat()
+        preprocessor_format.setForeground(QColor(155, 155, 155))  # Gray
+        self.highlighting_rules.append((r'#[^\n]*', preprocessor_format))
+        
+    def highlightBlock(self, text):
+        """Apply syntax highlighting to a block of text"""
+        # Apply single-line rules
+        for pattern, format in self.highlighting_rules:
+            expression = re.compile(pattern)
+            for match in expression.finditer(text):
+                self.setFormat(match.start(), match.end() - match.start(), format)
+        
+        # Handle multi-line comments
+        self.setCurrentBlockState(0)
+        
+        start_expression = re.compile(r'/\*')
+        end_expression = re.compile(r'\*/')
+        
+        start_index = 0
+        if self.previousBlockState() != 1:
+            match = start_expression.search(text, start_index)
+            if match:
+                start_index = match.start()
+            else:
+                start_index = -1
+        
+        while start_index >= 0:
+            match = end_expression.search(text, start_index)
+            if match:
+                end_index = match.end()
+                comment_length = end_index - start_index
+                self.setCurrentBlockState(0)
+            else:
+                self.setCurrentBlockState(1)
+                comment_length = len(text) - start_index
+            
+            self.setFormat(start_index, comment_length, self.multi_line_comment_format)
+            match = start_expression.search(text, start_index + comment_length)
+            if match:
+                start_index = match.start()
+            else:
+                start_index = -1
 
 
 class MDHDialog(QDialog):
@@ -95,8 +203,17 @@ class MDHDialog(QDialog):
         self.btn_jacobian = QPushButton("Jacobian")
         self.btn_jacobian.clicked.connect(self.on_jacobian)
         
+        self.btn_dynamic_base_regressor = QPushButton("Dynamic Base Regressor")
+        self.btn_dynamic_base_regressor.clicked.connect(self.on_dynamic_base_regressor)
+        
+        self.btn_save_mdh = QPushButton("Save MDH")
+        self.btn_save_mdh.clicked.connect(self.on_save_mdh)
+        
         buttons_layout.addWidget(self.btn_forward_kinematics)
         buttons_layout.addWidget(self.btn_jacobian)
+        buttons_layout.addWidget(self.btn_dynamic_base_regressor)
+
+        buttons_layout.addWidget(self.btn_save_mdh)
         
         left_layout.addLayout(buttons_layout)
         
@@ -113,17 +230,47 @@ class MDHDialog(QDialog):
         # Top section for .h header file
         header_group = QGroupBox(".h Header File")
         header_layout = QVBoxLayout(header_group)
+        
+        # Add copy button for header
+        header_button_layout = QHBoxLayout()
+        self.btn_copy_header = QPushButton("Copy Header")
+        self.btn_copy_header.clicked.connect(self.on_copy_header)
+        header_button_layout.addWidget(self.btn_copy_header)
+        header_button_layout.addStretch()
+        header_layout.addLayout(header_button_layout)
+        
         self.header_text_edit = QTextEdit()
         self.header_text_edit.setReadOnly(True)
         self.header_text_edit.setPlaceholderText("Header file content will be displayed here...")
+        # Set monospace font for code
+        font = QFont("Consolas", 10)
+        font.setStyleHint(QFont.Monospace)
+        self.header_text_edit.setFont(font)
+        # Add syntax highlighter
+        self.header_highlighter = CppSyntaxHighlighter(self.header_text_edit.document())
         header_layout.addWidget(self.header_text_edit)
         
         # Bottom section for .cpp file
         cpp_group = QGroupBox(".cpp Source File")
         cpp_layout = QVBoxLayout(cpp_group)
+        
+        # Add copy button for cpp
+        cpp_button_layout = QHBoxLayout()
+        self.btn_copy_cpp = QPushButton("Copy Source")
+        self.btn_copy_cpp.clicked.connect(self.on_copy_cpp)
+        cpp_button_layout.addWidget(self.btn_copy_cpp)
+        cpp_button_layout.addStretch()
+        cpp_layout.addLayout(cpp_button_layout)
+        
         self.cpp_text_edit = QTextEdit()
         self.cpp_text_edit.setReadOnly(True)
         self.cpp_text_edit.setPlaceholderText("Source file content will be displayed here...")
+        # Set monospace font for code
+        font = QFont("Consolas", 10)
+        font.setStyleHint(QFont.Monospace)
+        self.cpp_text_edit.setFont(font)
+        # Add syntax highlighter
+        self.cpp_highlighter = CppSyntaxHighlighter(self.cpp_text_edit.document())
         cpp_layout.addWidget(self.cpp_text_edit)
         
         # Add both sections to vertical splitter
@@ -141,7 +288,7 @@ class MDHDialog(QDialog):
         print("Forward Kinematics button clicked")
         # For now, just show placeholder text
         
-        fk = fk_python_template.FK_SYM(self.mdh_parameters)
+        fk = forward_kinematics.FK_SYM(self.mdh_parameters)
         fk_code, fk_header = fk.gencpp()
         
         
@@ -155,6 +302,17 @@ class MDHDialog(QDialog):
         # For now, just show placeholder text
         self.header_text_edit.setText("// Jacobian header code will be generated here")
         self.cpp_text_edit.setText("// Jacobian implementation code will be generated here")
+        
+    def on_dynamic_base_regressor(self):
+        """Handle Dynamic Base Regressor button click"""
+        # TODO: Implement Dynamic Base Regressor calculation and code generation
+        print("Dynamic Base Regressor button clicked")
+        
+        code, base_idxs = dynamic_base_regressor.create_gx7(self.mdh_parameters)
+        # For now, just show placeholder text
+        self.header_text_edit.setText(f'{base_idxs}')
+        self.cpp_text_edit.setText(code)
+
     
     def update_mdh_parameters(self, mdh_parameters):
         """Update the MDH parameters in the table"""
@@ -173,3 +331,48 @@ class MDHDialog(QDialog):
             for j, param in enumerate(params):
                 param_item = QTableWidgetItem(f"{param:.4f}")
                 self.mdh_table.setItem(i, j+1, param_item)
+    
+    def on_save_mdh(self):
+        """Save MDH parameters to a text file"""
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save MDH Parameters",
+            f"{self.chain_name}_mdh_parameters.txt",
+            "Text Files (*.txt)"
+        )
+        
+        if file_path:
+            try:
+                with open(file_path, 'w') as f:
+                    # Write header
+                    f.write(f"MDH Parameters for {self.chain_name}\n")
+                    f.write("=" * 50 + "\n\n")
+                    
+                    # Write column headers
+                    f.write(f"{'Joint':<10} {'theta (rad)':<12} {'d':<12} {'a':<12} {'α (rad)':<12}\n")
+                    f.write("-" * 60 + "\n")
+                    
+                    # Write MDH parameters
+                    for i, params in enumerate(self.mdh_parameters):
+                        joint_name = f"Joint {i+1}"
+                        theta, d, a, alpha = params
+                        f.write(f"{joint_name:<10} {theta:<4.8f} {d:<4.8f} {a:<4.8f} {alpha:<4.8f}\n")
+                    
+                    f.write("\n" + "=" * 50 + "\n")
+                    f.write(f"Total joints: {len(self.mdh_parameters)}\n")
+                
+                QMessageBox.information(self, "Success", f"MDH parameters saved to:\n{file_path}")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to save MDH parameters:\n{str(e)}")
+    
+    def on_copy_header(self):
+        """Copy header code to clipboard"""
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.header_text_edit.toPlainText())
+        QMessageBox.information(self, "Copied", "Header code copied to clipboard!")
+    
+    def on_copy_cpp(self):
+        """Copy source code to clipboard"""
+        clipboard = QApplication.clipboard()
+        clipboard.setText(self.cpp_text_edit.toPlainText())
+        QMessageBox.information(self, "Copied", "Source code copied to clipboard!")
