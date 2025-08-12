@@ -17,6 +17,8 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 
+from templates import fk_python_template
+
 
 class MDHDialog(QDialog):
     """Dialog for displaying MDH parameters and generating code"""
@@ -138,8 +140,13 @@ class MDHDialog(QDialog):
         # TODO: Implement forward kinematics calculation and code generation
         print("Forward Kinematics button clicked")
         # For now, just show placeholder text
-        self.header_text_edit.setText("// Forward Kinematics header code will be generated here")
-        self.cpp_text_edit.setText("// Forward Kinematics implementation code will be generated here")
+        
+        fk = fk_python_template.FK_SYM(self.mdh_parameters)
+        fk_code, fk_header = fk.gencpp()
+        
+        
+        self.header_text_edit.setText(fk_header)
+        self.cpp_text_edit.setText(fk_code)
     
     def on_jacobian(self):
         """Handle Jacobian button click"""
