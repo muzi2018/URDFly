@@ -1,4 +1,5 @@
 import vtk
+import os
 
 class URDFModel:
     """Class to represent a URDF link with its mesh and transformation"""
@@ -18,10 +19,20 @@ class URDFModel:
             self.source.SetThetaResolution(20)
             self.source.Update()
         else:
-            # Create the STL reader for mesh file
-            self.source = vtk.vtkSTLReader()
-            self.source.SetFileName(mesh_file)
-            self.source.Update()
+            # Get file extension to determine the appropriate reader
+            _, file_extension = os.path.splitext(mesh_file)
+            file_extension = file_extension.lower()
+            
+            if file_extension == '.obj':
+                # Create the OBJ reader for mesh file
+                self.source = vtk.vtkOBJReader()
+                self.source.SetFileName(mesh_file)
+                self.source.Update()
+            else:
+                # Default to STL reader for mesh file (or any other extension)
+                self.source = vtk.vtkSTLReader()
+                self.source.SetFileName(mesh_file)
+                self.source.Update()
 
         # Create mapper and actor
         self.mapper = vtk.vtkPolyDataMapper()

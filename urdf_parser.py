@@ -141,8 +141,6 @@ class URDFParser:
         for joint in self.joints:
             parent = joint["parent"]
             child = joint["child"]
-            is_rev = joint["type"] == 'revolute'
-
             # Get parent transformation
             if parent in transformations:
                 T_parent = transformations[parent]
@@ -159,6 +157,7 @@ class URDFParser:
             transformations[child] = T_parent @ T_joint
             
         rev_joints = [j for j in self.joints if j['type'] == 'revolute']
+        non_rev_jonits = [j for j in self.joints if j['type'] != 'revolute']
         
         if qs is not None:
             # 根据角度更新
@@ -184,7 +183,26 @@ class URDFParser:
 
                 # Child transformation is parent * joint
                 transformations[child] = T_parent @ T_joint @ T_update
-            
+        
+            # 再计算一次，更新非revolute
+            for joint, q in zip(non_rev_jonits, qs):
+                parent = joint["parent"]
+                child = joint["child"]
+                # Get parent transformation
+                if parent in transformations:
+                    T_parent = transformations[parent]
+                else:
+                    print(f"Warning: Parent link '{parent}' not found in transformations")
+                    T_parent = np.eye(4)
+
+                # Compute joint transformation
+                T_joint = self.compute_transformation(
+                    joint["origin"]["rpy"], joint["origin"]["xyz"]
+                )
+                
+
+                # Child transformation is parent * joint
+                transformations[child] = T_parent @ T_joint
         
 
         return transformations
@@ -226,7 +244,7 @@ class URDFParser:
                 T_total = T @ T_visual
                 color = link_info["color"]
     
-            else:
+            else: # 虚拟Link
                 mesh_file = None
                 T_total = T
                 color = None
@@ -738,7 +756,7 @@ if __name__ == "__main__":
     from mpl_toolkits.mplot3d import Axes3D
     import pybullet as p
     
-    urdf_path = "descriptions/yumi/urdf/yumi.urdf"
+    urdf_path = "hands/linker_right/urdf/linkerhand_l21_right.urdf"
     parser = URDFParser(urdf_path)
     
     parser.get_robot_info()
