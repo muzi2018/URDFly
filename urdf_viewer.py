@@ -5,6 +5,7 @@ import sys
 import os
 import math
 import numpy as np
+from math import pi
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -51,6 +52,9 @@ class URDFViewer(QMainWindow):
         self.selected_chain = None  # Currently selected chain
         self.selected_chain_index = 0  # Index of the currently selected chain
         self.current_urdf_file = None  # Path to the currently loaded URDF file
+        self.joint_sliders = []  # List to store joint angle sliders
+        self.joint_values = []  # List to store joint angle values
+        self.revolute_joints = []  # List to store revolute joints
         self.init_ui()
 
     def init_ui(self):
@@ -65,6 +69,10 @@ class URDFViewer(QMainWindow):
         # Create left panel for controls
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
+        
+        # Create right panel for joint controls
+        right_panel = QWidget()
+        right_layout = QVBoxLayout(right_panel)
 
         # Create chain selection combo box
         chain_selection_layout = QVBoxLayout()
@@ -140,9 +148,27 @@ class URDFViewer(QMainWindow):
         # Create VTK widget for 3D visualization
         self.vtk_widget = QVTKRenderWindowInteractor()
 
+        # Create joint control group
+        joint_group = QGroupBox("Joint Controls")
+        self.joint_layout = QVBoxLayout(joint_group)
+        
+        # Add a label explaining the sliders
+        joint_label = QLabel("Adjust joint angles (-π to π):")
+        self.joint_layout.addWidget(joint_label)
+        
+        # We'll add sliders dynamically when a URDF is loaded
+        
+        # Add joint group to right panel
+        right_layout.addWidget(joint_group)
+        right_layout.addStretch()
+        
+        # Set fixed width for right panel
+        right_panel.setFixedWidth(300)
+
         # Add panels to main layout
         main_layout.addWidget(left_panel)
         main_layout.addWidget(self.vtk_widget, 1)
+        main_layout.addWidget(right_panel)
 
         # Set central widget
         self.setCentralWidget(central_widget)
@@ -206,6 +232,21 @@ class URDFViewer(QMainWindow):
                 joint_axes,
                 joint_parent_links,
                 joint_child_links) = parser.get_robot_info()
+                
+                # Store revolute joints for slider controls
+                self.revolute_joints = []
+                for i, joint_type in enumerate(joint_types):
+                    if joint_type == 'revolute':
+                        self.revolute_joints.append({
+                            'name': joint_names[i],
+                            'index': i,
+                            'parent': joint_parent_links[i],
+                            'child': joint_child_links[i],
+                            'axis': joint_axes[i]
+                        })
+                
+                # Create joint sliders
+                self.create_joint_sliders()
                 
                 # Get chain information
                 self.chains, trees = parser.get_chain_info()
@@ -285,6 +326,9 @@ class URDFViewer(QMainWindow):
         # Clear the combo box and link list
         self.chain_combo.clear()
         self.link_list.clear()
+        
+        # Clear joint sliders
+        self.clear_joint_sliders()
         
         # Clear MDH frames
         for actor in self.mdh_frames_actors:
@@ -545,6 +589,122 @@ class URDFViewer(QMainWindow):
         # Update the rendering
         self.vtk_widget.GetRenderWindow().Render()
 
+    def create_joint_sliders(self):
+        """Create sliders for controlling joint angles"""
+        # Clear existing sliders
+        self.clear_joint_sliders()
+        
+        # Initialize joint values array with zeros
+        self.joint_values = [0.0] * len(self.revolute_joints)
+        
+        # Create a slider for each revolute joint
+        for i, joint in enumerate(self.revolute_joints):
+            # Create a group for this joint
+            joint_box = QGroupBox(joint['name'])
+            joint_box_layout = QVBoxLayout(joint_box)
+            
+            # Create a slider
+            slider = QSlider(Qt.Horizontal)
+            slider.setMinimum(-314)  # -π in hundredths
+            slider.setMaximum(314)   # π in hundredths
+            slider.setValue(0)       # Default to 0
+            slider.setTickPosition(QSlider.TicksBelow)
+            slider.setTickInterval(157)  # π/2 in hundredths
+            
+            # Create a label to show the current value
+            value_label = QLabel("0.00")
+            
+            # Connect the slider to update function
+            slider.valueChanged.connect(lambda val, idx=i, label=value_label: self.update_joint_angle(val, idx, label))
+            
+            # Add slider and label to the joint box
+            joint_box_layout.addWidget(slider)
+            joint_box_layout.addWidget(value_label)
+            
+            # Add the joint box to the joint layout
+            self.joint_layout.addWidget(joint_box)
+            
+            # Store the slider for later access
+            self.joint_sliders.append(slider)
+    
+    def clear_joint_sliders(self):
+        """Clear all joint sliders"""
+        # Clear the joint values
+        self.joint_values = []
+        
+        # Clear the sliders list
+        self.joint_sliders = []
+        
+        # Remove all widgets from the joint layout
+        if hasattr(self, 'joint_layout'):
+            while self.joint_layout.count():
+                item = self.joint_layout.takeAt(0)
+                widget = item.widget()
+                if widget:
+                    widget.deleteLater()
+    
+    def update_joint_angle(self, value, index, label):
+        """Update joint angle when slider is moved"""
+        # Convert slider value to radians (from hundredths)
+        angle = value / 100.0
+        
+        # Update the label
+        label.setText(f"{angle:.2f}")
+        
+        # Store the value
+        self.joint_values[index] = angle
+        
+        # Update the model
+        self.update_model_with_joint_angles()
+    
+    def update_model_with_joint_angles(self):
+        """Update the model visualization with current joint angles"""
+        if not self.current_urdf_file:
+            return
+        
+        # Create a fresh parser instance
+        parser = URDFParser(self.current_urdf_file)
+        
+        # Get updated robot info with joint angles
+        (link_names,
+        link_mesh_files,
+        link_mesh_transformations,
+        link_frames,
+        link_colors,
+        joint_names,
+        joint_frames,
+        joint_types,
+        joint_axes,
+        joint_parent_links,
+        joint_child_links) = parser.get_robot_info(qs=self.joint_values)
+        
+        # Update existing models with new transformations
+        for i, model in enumerate(self.models):
+            if i < len(link_names) and model.name == link_names[i]:
+                # Update mesh transformation
+                model.apply_transform(link_mesh_transformations[i])
+                
+                # Update axes and text actors
+                if model.axes_actor:
+                    vtk_transform = vtk.vtkTransform()
+                    vtk_transform.SetMatrix(link_frames[i].flatten())
+                    model.axes_actor.SetUserTransform(vtk_transform)
+                
+                if model.text_actor:
+                    # Update text position based on new frame
+                    z_endpoint = [0, 0, 0.05, 1]  # Same axis_length as in create_axes_actor
+                    vtk_transform = vtk.vtkTransform()
+                    vtk_transform.SetMatrix(link_frames[i].flatten())
+                    transformed_point = vtk_transform.TransformPoint(z_endpoint[0], z_endpoint[1], z_endpoint[2])
+                    model.text_actor.SetAttachmentPoint(transformed_point[0], transformed_point[1], transformed_point[2])
+        
+        # Update MDH frames if they are visible
+        if hasattr(self, 'cb_mdh_frames') and self.cb_mdh_frames.isChecked() and self.selected_chain:
+            self.create_mdh_frames(self.selected_chain)
+        
+        # Update the rendering
+        self.vtk_widget.GetRenderWindow().Render()
+    
     def closeEvent(self, event):
         """Handle window close event"""
         # Properly clean up the VTK widget
