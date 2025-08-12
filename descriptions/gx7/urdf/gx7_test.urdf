@@ -117,7 +117,7 @@
       </geometry>
     </collision>
   </link>
-  <joint name="joint3" type="fixed">
+  <joint name="joint3" type="revolute">
     <origin xyz="0 -0.1105 -0.0235" rpy="1.5707963 0 0" />
     <parent link="Link2" />
     <child link="Link3" />
