@@ -122,6 +122,7 @@ class XMLEditor(QMainWindow):
     
     def init_ui(self):
         """Initialize the user interface"""
+        self.setWindowTitle("URDF Editor")
         # Set window size
         window_width = 1200
         window_height = 800
@@ -210,7 +211,7 @@ class XMLEditor(QMainWindow):
     def save_file_as(self):
         """Save the current file with a new name"""
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save File As", "", "XML Files (*.xml *.urdf);;All Files (*)"
+            self, "Save File As", "", "URDF Files (*.urdf)"
         )
         
         if file_path:
@@ -222,10 +223,10 @@ class XMLEditor(QMainWindow):
         """Update the file path label"""
         if self.file_path:
             self.file_path_label.setText(self.file_path)
-            self.setWindowTitle(f"XML Editor - {os.path.basename(self.file_path)}")
+            self.setWindowTitle(f"URDF Editor - {os.path.basename(self.file_path)}")
         else:
             self.file_path_label.setText("No file loaded")
-            self.setWindowTitle("XML Editor")
+            self.setWindowTitle("URDF Editor")
     
     def update_model(self):
         """Update the model in the viewer with the current text content"""

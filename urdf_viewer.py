@@ -64,7 +64,7 @@ class URDFViewer(QMainWindow):
 
     def init_ui(self):
         """Initialize the user interface"""
-        self.setWindowTitle("URDF Viewer")
+        self.setWindowTitle("URDFly")
         
         # Set window size
         window_width = 1200
@@ -254,7 +254,7 @@ class URDFViewer(QMainWindow):
     def open_urdf_file(self):
         """Open a URDF file and visualize the robot"""
         filename, _ = QFileDialog.getOpenFileName(
-            self, "Open URDF File", "", "URDF Files (*.urdf *.xml)"
+            self, "Open URDF File", "", "URDF Files (*.urdf)"
         )
 
         if filename:
