@@ -31,6 +31,7 @@ from PyQt5.QtWidgets import (
     QHeaderView,
     QComboBox,
     QScrollArea,
+    QDesktopWidget,
 )
 from PyQt5.QtCore import Qt
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
@@ -61,7 +62,18 @@ class URDFViewer(QMainWindow):
     def init_ui(self):
         """Initialize the user interface"""
         self.setWindowTitle("URDF Viewer")
-        self.setGeometry(100, 100, 1200, 800)
+        
+        # Set window size
+        window_width = 1200
+        window_height = 800
+        
+        # Get screen size and calculate center position
+        screen = QDesktopWidget().availableGeometry()
+        x = (screen.width() - window_width) // 2
+        y = (screen.height() - window_height) // 2
+        
+        # Set window geometry to be centered on screen
+        self.setGeometry(x, y, window_width, window_height)
 
         # Create central widget and main layout
         central_widget = QWidget()
