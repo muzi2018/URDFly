@@ -92,11 +92,6 @@ class XMLEditor(QMainWindow):
         # Create toolbar
         toolbar_layout = QHBoxLayout()
         
-        # Create save button
-        self.btn_save = QPushButton("Save")
-        self.btn_save.clicked.connect(self.save_file)
-        toolbar_layout.addWidget(self.btn_save)
-        
         # Create save as button
         self.btn_save_as = QPushButton("Save As")
         self.btn_save_as.clicked.connect(self.save_file_as)
@@ -128,7 +123,7 @@ class XMLEditor(QMainWindow):
         
         # Create keyboard shortcuts
         self.shortcut_save = QShortcut(QKeySequence("Ctrl+S"), self)
-        self.shortcut_save.activated.connect(self.save_file)
+        self.shortcut_save.activated.connect(self.save_file_as)
         
         # Update file path label
         self.update_file_path_label()
