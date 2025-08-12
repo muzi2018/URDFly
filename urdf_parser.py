@@ -130,81 +130,94 @@ class URDFParser:
         return T
 
     def forward_kinematics(self, qs=None):
-        """Compute the transformations for all links"""
+        """Compute the transformations for all links based on the tree structure"""
         
-        if len(self.roots) > 1:
-            print('Warning: Multiple roots are found, using the frist one')
+        # Identify all chains in the URDF
+        chains, trees = self.identify_chains()
         
-        transformations = {self.roots[0].name: np.eye(4)}
-
-        # 计算原始变换
-        for joint in self.joints:
-            parent = joint["parent"]
-            child = joint["child"]
-            # Get parent transformation
-            if parent in transformations:
-                T_parent = transformations[parent]
-            else:
-                print(f"Warning: Parent link '{parent}' not found in transformations")
-                T_parent = np.eye(4)
-
-            # Compute joint transformation
-            T_joint = self.compute_transformation(
-                joint["origin"]["rpy"], joint["origin"]["xyz"]
-            )
-
-            # Child transformation is parent * joint
-            transformations[child] = T_parent @ T_joint
+        if len(trees) > 1:
+            print('Warning: Multiple trees are found, all will be processed')
+        
+        # Initialize transformations dictionary
+        transformations = {}
+        
+        # Process each tree
+        for tree in trees:
+            # Root link has identity transformation
+            transformations[tree.name] = np.eye(4)
             
-        rev_joints = [j for j in self.joints if j['type'] == 'revolute']
-        non_rev_jonits = [j for j in self.joints if j['type'] != 'revolute']
-        
-        if qs is not None:
-            # 根据角度更新
-            for joint, q in zip(rev_joints, qs):
-                parent = joint["parent"]
-                child = joint["child"]
-                # Get parent transformation
-                if parent in transformations:
-                    T_parent = transformations[parent]
-                else:
-                    print(f"Warning: Parent link '{parent}' not found in transformations")
-                    T_parent = np.eye(4)
-
-                # Compute joint transformation
-                T_joint = self.compute_transformation(
-                    joint["origin"]["rpy"], joint["origin"]["xyz"]
-                )
+            # Find all chains in this tree
+            tree_chains = [chain for chain in chains if chain["root"] == tree]
+            
+            # Process each chain
+            for chain in tree_chains:
+                # Get the nodes in the chain (alternating links and joints)
+                nodes = chain["nodes"]
                 
-                # 根据角度、旋转轴更新
-                joint_axis = joint['axis']
-                
-                T_update = tf.rotation_matrix(q, joint_axis)
-
-                # Child transformation is parent * joint
-                transformations[child] = T_parent @ T_joint @ T_update
+                # Traverse the chain from root to leaf
+                for i in range(1, len(nodes)):
+                    current_node = nodes[i]
+                    parent_node = nodes[i-1]
+                    
+                    if current_node.node_type == "joint":
+                        # Current node is a joint, parent is a link
+                        joint_name = current_node.name
+                        parent_link = parent_node.name
+                        
+                        # Find the joint data
+                        joint_data = next((j for j in self.joints if j["name"] == joint_name), None)
+                        
+                        if joint_data:
+                            # Get parent transformation
+                            if parent_link in transformations:
+                                T_parent = transformations[parent_link]
+                            else:
+                                print(f"Warning: Parent link '{parent_link}' not found in transformations")
+                                T_parent = np.eye(4)
+                            
+                            # Compute joint transformation
+                            T_joint = self.compute_transformation(
+                                joint_data["origin"]["rpy"], joint_data["origin"]["xyz"]
+                            )
+                            
+                            # If joint angles are provided and this is a revolute joint
+                            if qs is not None and joint_data["type"] == "revolute":
+                                # Find the index of this joint in the revolute joints list
+                                rev_joints = [j for j in self.joints if j['type'] == 'revolute']
+                                try:
+                                    joint_index = rev_joints.index(joint_data)
+                                    if joint_index < len(qs):
+                                        q = qs[joint_index]
+                                        # Apply rotation based on joint angle and axis
+                                        joint_axis = joint_data['axis']
+                                        T_update = tf.rotation_matrix(q, joint_axis)
+                                        # Store joint transformation (parent * joint * rotation)
+                                        transformations[joint_name] = T_parent @ T_joint @ T_update
+                                    else:
+                                        # Not enough joint angles provided
+                                        transformations[joint_name] = T_parent @ T_joint
+                                except ValueError:
+                                    # Joint not found in revolute joints list
+                                    transformations[joint_name] = T_parent @ T_joint
+                            else:
+                                # Non-revolute joint or no joint angles provided
+                                transformations[joint_name] = T_parent @ T_joint
+                    
+                    elif current_node.node_type == "link":
+                        # Current node is a link, parent is a joint
+                        link_name = current_node.name
+                        parent_joint = parent_node.name
+                        
+                        # Get parent transformation
+                        if parent_joint in transformations:
+                            T_parent = transformations[parent_joint]
+                        else:
+                            print(f"Warning: Parent joint '{parent_joint}' not found in transformations")
+                            T_parent = np.eye(4)
+                        
+                        # Link transformation is the same as its parent joint
+                        transformations[link_name] = T_parent
         
-            # 再计算一次，更新非revolute
-            for joint, q in zip(non_rev_jonits, qs):
-                parent = joint["parent"]
-                child = joint["child"]
-                # Get parent transformation
-                if parent in transformations:
-                    T_parent = transformations[parent]
-                else:
-                    print(f"Warning: Parent link '{parent}' not found in transformations")
-                    T_parent = np.eye(4)
-
-                # Compute joint transformation
-                T_joint = self.compute_transformation(
-                    joint["origin"]["rpy"], joint["origin"]["xyz"]
-                )
-                
-
-                # Child transformation is parent * joint
-                transformations[child] = T_parent @ T_joint
-        
-
         return transformations
 
     def get_robot_info(self, qs=None):
@@ -228,6 +241,8 @@ class URDFParser:
         # Process each link
         for name, T in transformations.items():
             link_info = self.links.get(name)
+            if link_info is None:
+                continue
             if link_info.get("mesh") is not None:
                 # Get mesh file path
                 mesh_file = link_info["mesh"]
@@ -756,11 +771,11 @@ if __name__ == "__main__":
     from mpl_toolkits.mplot3d import Axes3D
     import pybullet as p
     
-    urdf_path = "hands/linker_right/urdf/linkerhand_l21_right.urdf"
+    urdf_path = "dex-urdf-main/dex-urdf-main/robots/hands/shadow_hand/shadow_hand_right.urdf"
     parser = URDFParser(urdf_path)
     
     parser.get_robot_info()
-    # parser.print_chains()
+    parser.print_chains()
 
     # chains, _ = parser.get_chain_info()
     
@@ -823,4 +838,3 @@ if __name__ == "__main__":
     # orientation = link_state[5]  # Orientation of the link (quaternion)
 
     # orientation = p.getMatrixFromQuaternion(orientation)
-
