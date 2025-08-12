@@ -2,6 +2,7 @@ import numpy as np
 import math
 import os
 from anytree import Node, RenderTree
+import transformations as tf
 
 
 
@@ -61,6 +62,8 @@ class URDFParser:
                 "axis": self.parse_axis(joint.find("axis")),
             }
             self.joints.append(joint_data)
+            
+        self.roots = self.build_multiple_trees()
 
     def parse_origin(self, origin_element):
         """Parse origin element to get xyz and rpy"""
@@ -126,19 +129,19 @@ class URDFParser:
 
         return T
 
-    def forward_kinematics(self):
+    def forward_kinematics(self, qs=None):
         """Compute the transformations for all links"""
         
-        roots = self.build_multiple_trees()
-        
-        if len(roots) > 1:
+        if len(self.roots) > 1:
             print('Warning: Multiple roots are found, using the frist one')
         
-        transformations = {roots[0].name: np.eye(4)}
+        transformations = {self.roots[0].name: np.eye(4)}
 
+        # 计算原始变换
         for joint in self.joints:
             parent = joint["parent"]
             child = joint["child"]
+            is_rev = joint["type"] == 'revolute'
 
             # Get parent transformation
             if parent in transformations:
@@ -154,12 +157,41 @@ class URDFParser:
 
             # Child transformation is parent * joint
             transformations[child] = T_parent @ T_joint
+            
+        rev_joints = [j for j in self.joints if j['type'] == 'revolute']
+        
+        if qs is not None:
+            # 根据角度更新
+            for joint, q in zip(rev_joints, qs):
+                parent = joint["parent"]
+                child = joint["child"]
+                # Get parent transformation
+                if parent in transformations:
+                    T_parent = transformations[parent]
+                else:
+                    print(f"Warning: Parent link '{parent}' not found in transformations")
+                    T_parent = np.eye(4)
+
+                # Compute joint transformation
+                T_joint = self.compute_transformation(
+                    joint["origin"]["rpy"], joint["origin"]["xyz"]
+                )
+                
+                # 根据角度、旋转轴更新
+                joint_axis = joint['axis']
+                
+                T_update = tf.rotation_matrix(q, joint_axis)
+
+                # Child transformation is parent * joint
+                transformations[child] = T_parent @ T_joint @ T_update
+            
+        
 
         return transformations
 
-    def get_robot_info(self):
+    def get_robot_info(self, qs=None):
         """Get information about the robot links and their transformations"""
-        transformations = self.forward_kinematics()
+        transformations = self.forward_kinematics(qs)
 
         link_names = []
         link_mesh_files = []
