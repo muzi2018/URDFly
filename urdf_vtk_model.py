@@ -150,7 +150,7 @@ class URDFModel:
             text_actor.GetTextActor().SetTextScaleModeToNone()
             text_actor.GetCaptionTextProperty().SetFontSize(16)
             text_actor.GetCaptionTextProperty().SetColor(0, 0, 1)  # Blue text
-            text_actor.GetCaptionTextProperty().SetBold(True)
+            text_actor.GetCaptionTextProperty().SetBold(False)
             
             # Position the text at the end of the z-axis
             # The attachment point is in world coordinates
@@ -165,7 +165,9 @@ class URDFModel:
             
             # Configure the caption
             text_actor.BorderOff()
-            text_actor.LeaderOff()  # No leader line
+            text_actor.LeaderOff()  # leader line
+           
+            text_actor.ThreeDimensionalLeaderOff()
             
             # Set the position of the text relative to the attachment point
             text_actor.SetPadding(2)

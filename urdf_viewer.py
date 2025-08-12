@@ -800,9 +800,10 @@ class URDFViewer(QMainWindow):
         """Update the model using XML content from the editor"""
         try:
             # Create a temporary file to store the XML content
-            with tempfile.NamedTemporaryFile(suffix='.urdf', delete=False, dir=os.path.dirname(self.current_urdf_file)) as temp_file:
-                temp_path = temp_file.name
-                temp_file.write(xml_content.encode('utf-8'))
+            
+            temp_path = self.current_urdf_file.lower().replace('.urdf', '_temp.urdf')
+            with open(temp_path, 'w', encoding='utf-8')as temp_file:
+                temp_file.write(xml_content)
             
             # Clear previous models
             self.clear_models()
