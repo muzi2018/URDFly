@@ -3,6 +3,7 @@
 
 import sys
 import os
+import tempfile
 from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -18,7 +19,7 @@ from PyQt5.QtWidgets import (
     QShortcut,
     QDesktopWidget
 )
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, pyqtSignal
 from PyQt5.QtGui import QFont, QKeySequence, QTextCharFormat, QColor, QSyntaxHighlighter
 
 
@@ -64,9 +65,10 @@ class XMLHighlighter(QSyntaxHighlighter):
 class XMLEditor(QMainWindow):
     """XML Editor window for editing URDF files"""
     
-    def __init__(self, file_path=None):
+    def __init__(self, file_path=None, update_callback=None):
         super().__init__()
         self.file_path = file_path
+        self.update_callback = update_callback
         self.init_ui()
         
         if file_path:
@@ -96,6 +98,12 @@ class XMLEditor(QMainWindow):
         self.btn_save_as = QPushButton("Save As")
         self.btn_save_as.clicked.connect(self.save_file_as)
         toolbar_layout.addWidget(self.btn_save_as)
+        
+        # Create update button
+        self.btn_update = QPushButton("Update")
+        self.btn_update.clicked.connect(self.update_model)
+        self.btn_update.setToolTip("Update the model in the viewer without saving the file")
+        toolbar_layout.addWidget(self.btn_update)
         
         # Add spacer to push the file path label to the right
         toolbar_layout.addStretch()
@@ -172,6 +180,14 @@ class XMLEditor(QMainWindow):
         else:
             self.file_path_label.setText("No file loaded")
             self.setWindowTitle("XML Editor")
+    
+    def update_model(self):
+        """Update the model in the viewer with the current text content"""
+        if self.update_callback:
+            content = self.text_edit.toPlainText()
+            self.update_callback(content)
+        else:
+            QMessageBox.warning(self, "Warning", "Update callback not set.")
 
 
 if __name__ == "__main__":

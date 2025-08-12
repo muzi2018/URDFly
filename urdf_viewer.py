@@ -5,6 +5,7 @@ import sys
 import os
 import math
 import numpy as np
+import tempfile
 from math import pi
 from PyQt5.QtWidgets import (
     QApplication,
@@ -59,6 +60,7 @@ class URDFViewer(QMainWindow):
         self.joint_values = []  # List to store joint angle values
         self.revolute_joints = []  # List to store revolute joints
         self.init_ui()
+        
 
     def init_ui(self):
         """Initialize the user interface"""
@@ -790,9 +792,83 @@ class URDFViewer(QMainWindow):
             )
             return
         
-        # Create and show the XML editor window
-        self.editor = XMLEditor(self.current_urdf_file)
+        # Create and show the XML editor window with update callback
+        self.editor = XMLEditor(self.current_urdf_file, self.update_model_from_xml)
         self.editor.show()
+    
+    def update_model_from_xml(self, xml_content):
+        """Update the model using XML content from the editor"""
+        try:
+            # Create a temporary file to store the XML content
+            with tempfile.NamedTemporaryFile(suffix='.urdf', delete=False, dir=os.path.dirname(self.current_urdf_file)) as temp_file:
+                temp_path = temp_file.name
+                temp_file.write(xml_content.encode('utf-8'))
+            
+            # Clear previous models
+            self.clear_models()
+            
+            # Parse the URDF from the temporary file
+            parser = URDFParser(temp_path)
+            
+            # Get robot info for visualization
+            (link_names,
+            link_mesh_files,
+            link_mesh_transformations,
+            link_frames,
+            link_colors,
+            joint_names,
+            joint_frames,
+            joint_types,
+            joint_axes,
+            joint_parent_links,
+            joint_child_links) = parser.get_robot_info()
+            
+            # Store revolute joints for slider controls
+            self.revolute_joints = []
+            for i, joint_type in enumerate(joint_types):
+                if joint_type == 'revolute':
+                    self.revolute_joints.append({
+                        'name': joint_names[i],
+                        'index': i,
+                        'parent': joint_parent_links[i],
+                        'child': joint_child_links[i],
+                        'axis': joint_axes[i]
+                    })
+            
+            # Create joint sliders
+            self.create_joint_sliders()
+            
+            # Get chain information
+            self.chains, trees = parser.get_chain_info()
+            
+            # Create models for each link
+            for i in range(len(link_names)):
+                self.add_urdf_model(
+                    link_names[i],
+                    link_mesh_files[i],
+                    link_mesh_transformations[i],
+                    link_frames[i],
+                    link_colors[i],
+                )
+            
+            # Populate the chain tree
+            self.populate_chain_tree()
+
+            # Reset camera to show all actors
+            self.renderer.ResetCamera()
+            self.vtk_widget.GetRenderWindow().Render()
+            
+            # Store the temporary file path as the current URDF file
+            # This allows further editing and updates
+            self.current_urdf_file = temp_path
+            
+            # Clean up the temporary file
+            # os.unlink(temp_path)  # Commented out to keep the file for further editing
+            
+        except Exception as e:
+            QMessageBox.critical(
+                self, "Error", f"Failed to update model from XML: {str(e)}"
+            )
     
     def closeEvent(self, event):
         """Handle window close event"""
