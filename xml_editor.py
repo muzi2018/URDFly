@@ -188,6 +188,11 @@ class XMLEditor(QMainWindow):
             self.update_callback(content)
         else:
             QMessageBox.warning(self, "Warning", "Update callback not set.")
+    
+    def closeEvent(self, event):
+        """Handle window close event"""
+        # Accept the close event
+        event.accept()
 
 
 if __name__ == "__main__":

@@ -873,9 +873,17 @@ class URDFViewer(QMainWindow):
     
     def closeEvent(self, event):
         """Handle window close event"""
+        # Close any open XML editor windows
+        if hasattr(self, 'editor') and self.editor is not None:
+            self.editor.close()
+        
         # Properly clean up the VTK widget
         self.vtk_widget.GetRenderWindow().Finalize()
         self.vtk_widget.close()
+        
+        # Exit the application
+        QApplication.quit()
+        
         event.accept()
 
 
