@@ -573,15 +573,6 @@ class URDFParser:
         
         if np.allclose(n, np.zeros(3)):
             # 情况3: 平行
-            # 计算两条平行线之间的最短距离
-            diff_pos = pi_next - pi
-            perpendicular_vec = np.cross(zi, np.cross(diff_pos, zi))
-            perpendicular_vec = perpendicular_vec / np.linalg.norm(perpendicular_vec)
-            
-            # 计算从pi到pi_next的向量在垂直于zi方向的分量
-            t = np.dot(diff_pos, perpendicular_vec) / np.dot(perpendicular_vec, perpendicular_vec)
-            
-            # 公垂线与zi的交点
             oi = pi  # 直接使用pi作为原点，即公垂线与zi的交点
             
             # 计算公垂线的两个端点

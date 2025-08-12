@@ -54,6 +54,7 @@ class URDFViewer(QMainWindow):
         self.models = []  # List to store loaded URDF models
         self.chains = []  # List to store kinematic chains
         self.mdh_frames_actors = []  # List to store MDH frame actors
+        self.mdh_text_actors = []  # List to store MDH frame text actors
         self.selected_chain = None  # Currently selected chain
         self.selected_chain_index = 0  # Index of the currently selected chain
         self.current_urdf_file = None  # Path to the currently loaded URDF file
@@ -382,6 +383,11 @@ class URDFViewer(QMainWindow):
             self.renderer.RemoveActor(actor)
         self.mdh_frames_actors = []
         
+        # Clear MDH text actors
+        for text_actor in self.mdh_text_actors:
+            self.renderer.RemoveActor(text_actor)
+        self.mdh_text_actors = []
+        
         # Reset selected chain and current URDF file
         self.selected_chain = None
         self.current_urdf_file = None
@@ -491,9 +497,11 @@ class URDFViewer(QMainWindow):
                 self.cb_mdh_frames.setChecked(False)
                 return
         else:
-            # Hide MDH frames
+            # Hide MDH frames and text
             for actor in self.mdh_frames_actors:
                 actor.SetVisibility(False)
+            for text_actor in self.mdh_text_actors:
+                text_actor.SetVisibility(False)
         
         # Update the rendering
         self.vtk_widget.GetRenderWindow().Render()
@@ -504,6 +512,11 @@ class URDFViewer(QMainWindow):
         for actor in self.mdh_frames_actors:
             self.renderer.RemoveActor(actor)
         self.mdh_frames_actors = []
+        
+        # Clear existing MDH text actors
+        for text_actor in self.mdh_text_actors:
+            self.renderer.RemoveActor(text_actor)
+        self.mdh_text_actors = []
         
         # Create a fresh parser instance to ensure we get the latest data
         parser = URDFParser(self.current_urdf_file)
@@ -526,7 +539,7 @@ class URDFViewer(QMainWindow):
         mdh_frames = parser.get_mdh_frames(current_chain)
         
         # Create axes actors for each MDH frame
-        for frame in mdh_frames:
+        for i, frame in enumerate(mdh_frames):
             axes = vtk.vtkAxesActor()
             axes.SetTotalLength(0.05, 0.05, 0.05)  # Set the length of the axes
             axes.SetShaftType(0)
@@ -544,6 +557,32 @@ class URDFViewer(QMainWindow):
             
             # Set initial visibility based on checkbox
             axes.SetVisibility(self.cb_mdh_frames.isChecked())
+            
+            # Create text label for MDH frame
+            text_actor = vtk.vtkCaptionActor2D()
+            text_actor.SetCaption(f"MDH{i}")
+            text_actor.GetTextActor().SetTextScaleModeToNone()
+            text_actor.GetCaptionTextProperty().SetFontSize(14)
+            text_actor.GetCaptionTextProperty().SetColor(0, 0, 1)  # Blue text for MDH frames
+            text_actor.GetCaptionTextProperty().SetBold(False)
+            
+            # Position the text at the end of the z-axis
+            z_endpoint = [0, 0, 0.05, 1]  # Same length as axes
+            transformed_point = vtk_transform.TransformPoint(z_endpoint[0], z_endpoint[1], z_endpoint[2])
+            text_actor.SetAttachmentPoint(transformed_point[0], transformed_point[1], transformed_point[2])
+            
+            # Configure the caption
+            text_actor.BorderOff()
+            text_actor.LeaderOff()
+            text_actor.ThreeDimensionalLeaderOff()
+            text_actor.SetPadding(2)
+            
+            # Add to renderer
+            self.renderer.AddActor(text_actor)
+            self.mdh_text_actors.append(text_actor)
+            
+            # Set initial visibility based on checkbox
+            text_actor.SetVisibility(self.cb_mdh_frames.isChecked())
         
         # Update the rendering
         self.vtk_widget.GetRenderWindow().Render()
