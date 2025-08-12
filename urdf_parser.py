@@ -673,7 +673,7 @@ class URDFParser:
                 xi = xi / np.linalg.norm(xi)
                 
             if case == 'parallel':
-                xi = np.cross(joint_vector, common_perpendicular[1] - common_perpendicular[0])
+                xi = common_perpendicular[1] - common_perpendicular[0]
                 xi = xi / np.linalg.norm(xi)
 
             mdh_xs.append(xi)
