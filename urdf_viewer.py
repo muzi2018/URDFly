@@ -35,6 +35,7 @@ from PyQt5.QtWidgets import (
     QDesktopWidget,
 )
 from xml_editor import XMLEditor
+from mdh_dialog import MDHDialog
 from PyQt5.QtCore import Qt
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 import vtk
@@ -561,20 +562,6 @@ class URDFViewer(QMainWindow):
             )
             return
         
-        # Create MDH parameter dialog
-        dialog = QDialog(self)
-        dialog.setWindowTitle(f"MDH Parameters - {self.selected_chain['name']}")
-        dialog.setMinimumWidth(500)
-        dialog.setMinimumHeight(300)
-        
-        # Create layout
-        layout = QVBoxLayout(dialog)
-        
-        # Create table
-        table = QTableWidget()
-        table.setColumnCount(5)  # Joint, theta, d, a, alpha
-        table.setHorizontalHeaderLabels(["Joint", "θ (rad)", "d", "a", "α (rad)"])
-        
         # Create a fresh parser instance to ensure we get the latest MDH parameters
         parser = URDFParser(self.current_urdf_file)
         
@@ -595,32 +582,8 @@ class URDFViewer(QMainWindow):
         # Get MDH parameters using the current chain
         _, _, _, mdh_parameters = parser.get_mdh_parameters(current_chain)
         
-        # Set row count
-        table.setRowCount(len(mdh_parameters))
-        
-        # Fill table with MDH parameters
-        for i, params in enumerate(mdh_parameters):
-            # Joint name (use link name or joint index)
-            joint_item = QTableWidgetItem(f"Joint {i+1}")
-            table.setItem(i, 0, joint_item)
-            
-            # MDH parameters: theta, d, a, alpha
-            for j, param in enumerate(params):
-                param_item = QTableWidgetItem(f"{param:.4f}")
-                table.setItem(i, j+1, param_item)
-        
-        # Resize columns to content
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        
-        # Add table to layout
-        layout.addWidget(table)
-        
-        # Add close button
-        btn_close = QPushButton("Close")
-        btn_close.clicked.connect(dialog.accept)
-        layout.addWidget(btn_close)
-        
-        # Show dialog
+        # Create and show the new MDH dialog
+        dialog = MDHDialog(self, current_chain['name'], mdh_parameters)
         dialog.exec_()
 
     def apply_transparency(self):
