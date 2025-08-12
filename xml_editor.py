@@ -26,6 +26,10 @@ from PyQt5.QtGui import QFont, QKeySequence, QTextCharFormat, QColor, QSyntaxHig
 class XMLHighlighter(QSyntaxHighlighter):
     """XML syntax highlighter for the editor"""
     
+    # Define states for multi-line constructs
+    NORMAL_STATE = 0
+    IN_COMMENT = 1
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         
@@ -46,20 +50,62 @@ class XMLHighlighter(QSyntaxHighlighter):
         value_format = QTextCharFormat()
         value_format.setForeground(QColor("#008000"))  # Green
         self.highlighting_rules.append((r'"[^"]*"', value_format))
+        self.highlighting_rules.append((r"'[^']*'", value_format))
         
-        # XML comments
-        comment_format = QTextCharFormat()
-        comment_format.setForeground(QColor("#808080"))  # Gray
-        self.highlighting_rules.append((r'<!--[^<>]*-->', comment_format))
+        # XML comment format
+        self.comment_format = QTextCharFormat()
+        self.comment_format.setForeground(QColor("#808080"))  # Gray
+        self.comment_format.setFontItalic(True)
     
     def highlightBlock(self, text):
         import re
         
+        # First apply single-line rules (tags, attributes, values)
         for pattern, format in self.highlighting_rules:
             for match in re.finditer(pattern, text):
                 start = match.start()
                 length = match.end() - match.start()
                 self.setFormat(start, length, format)
+        
+        # Handle multi-line comments
+        self.setCurrentBlockState(self.NORMAL_STATE)
+        
+        # Check if we're continuing a comment from the previous block
+        start_index = 0
+        if self.previousBlockState() == self.IN_COMMENT:
+            start_index = 0
+        else:
+            # Look for comment start
+            start_match = re.search(r'<!--', text)
+            if start_match:
+                start_index = start_match.start()
+            else:
+                start_index = -1
+        
+        # Process comments
+        while start_index >= 0:
+            # Look for comment end
+            end_match = re.search(r'-->', text[start_index:])
+            
+            if end_match:
+                # Found end of comment
+                end_index = start_index + end_match.end()
+                comment_length = end_index - start_index
+                self.setFormat(start_index, comment_length, self.comment_format)
+                
+                # Look for next comment start
+                next_start = re.search(r'<!--', text[end_index:])
+                if next_start:
+                    start_index = end_index + next_start.start()
+                else:
+                    start_index = -1
+            else:
+                # Comment continues to next block
+                self.setCurrentBlockState(self.IN_COMMENT)
+                comment_length = len(text) - start_index
+                self.setFormat(start_index, comment_length, self.comment_format)
+                break
+
 
 
 class XMLEditor(QMainWindow):
