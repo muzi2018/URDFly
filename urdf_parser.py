@@ -784,7 +784,7 @@ if __name__ == "__main__":
     
     fk = FK_SYM(mdh_parameters)
 
-    q = [0.2] * fk.num_joints
+    q = [0.] * fk.num_joints
     
     # global pos and rot
     global_pos_rot = fk.return_global_pos_rot(*q)
@@ -798,6 +798,7 @@ if __name__ == "__main__":
     mdh_config = []
     for i, params in enumerate(mdh_parameters):
         theta, d, a, alpha = params
+        
         mdh_config.append(rtb.RevoluteMDH(d=d, a=a, alpha=alpha, offset=theta))
 
     robot = rtb.DHRobot(
@@ -818,13 +819,18 @@ if __name__ == "__main__":
     dh_generator = urdf2dh.GenerateDhParams(urdf_path)
     dh_parameters = dh_generator.get_dh_parameters()
 
+
+    print('theta\td\ta\talpha')
+    
     dh_config = []
     for i, params in enumerate(dh_parameters):
         theta, d, a, alpha = params
+        print(f'{theta:.4f}\t{d:.4f}\t{a:.4f}\t{alpha:.4f}')
+
         dh_config.append(rtb.RevoluteDH(d=d, a=a, alpha=alpha, offset=theta))
     
     robot = rtb.DHRobot(
-    mdh_config, name="gx7")
+    dh_config, name="gx7")
     
     T = robot.fkine(q).data[0]
 
@@ -832,6 +838,7 @@ if __name__ == "__main__":
     
     ori = T[:3, :3]
     
+    print(q)
     print('DH RTB')
     print("pos=\n", pos)
 
