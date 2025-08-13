@@ -761,9 +761,11 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
     import pybullet as p
-    import sys
-    sys.path.append('templates')
-    import fk_python_template
+    
+    from codegen.forward_kinematics import FK_SYM
+    
+    
+    from third_parties import urdf2dh
     
     urdf_path = "descriptions/gx7/urdf/gx7_test.urdf"
 
@@ -780,36 +782,27 @@ if __name__ == "__main__":
     
     mdh_origins, mdh_zs, mdh_xs, mdh_parameters = parser.get_mdh_parameters(chain)
     
-    fk = fk_python_template.FK_SYM(mdh_parameters)
+    fk = FK_SYM(mdh_parameters)
 
-    qs = [0.1] * fk.num_joints
+    q = [0.2] * fk.num_joints
     
     # global pos and rot
-    global_pos_rot = fk.return_global_pos_rot(*qs)
+    global_pos_rot = fk.return_global_pos_rot(*q)
     print("global_pos=\n", global_pos_rot[:3, -1])
     print("global_rot=\n", global_pos_rot[:3, :3])
 
-    # # pretty print mdh
-    # print("MDH Parameters:")
-    # print('id\ttheta\td\ta\talpha')
-
-    # for i, params in enumerate(mdh_parameters):
-    #     print(f"{i}\t{params[0]:.4f}\t{params[1]:.4f}\t{params[2]:.4f}\t{params[3]:.4f}")
+   
 
     import roboticstoolbox as rtb
     
     mdh_config = []
     for i, params in enumerate(mdh_parameters):
         theta, d, a, alpha = params
-
         mdh_config.append(rtb.RevoluteMDH(d=d, a=a, alpha=alpha, offset=theta))
 
-
-    
     robot = rtb.DHRobot(
     mdh_config, name="gx7")
-    
-    q = [0.1]*7
+   
     
     T = robot.fkine(q).data[0]
 
@@ -817,7 +810,29 @@ if __name__ == "__main__":
     
     ori = T[:3, :3]
     
-    print('RTB')
+    print('MDH RTB')
+    print("pos=\n", pos)
+
+    print("ori=\n", ori)
+    
+    dh_generator = urdf2dh.GenerateDhParams(urdf_path)
+    dh_parameters = dh_generator.get_dh_parameters()
+
+    dh_config = []
+    for i, params in enumerate(dh_parameters):
+        theta, d, a, alpha = params
+        dh_config.append(rtb.RevoluteDH(d=d, a=a, alpha=alpha, offset=theta))
+    
+    robot = rtb.DHRobot(
+    mdh_config, name="gx7")
+    
+    T = robot.fkine(q).data[0]
+
+    pos = T[:3, 3]
+    
+    ori = T[:3, :3]
+    
+    print('DH RTB')
     print("pos=\n", pos)
 
     print("ori=\n", ori)
