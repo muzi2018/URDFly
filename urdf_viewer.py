@@ -36,7 +36,8 @@ from PyQt5.QtWidgets import (
 )
 from xml_editor import XMLEditor
 from mdh_dialog import MDHDialog
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QUrl
+from PyQt5.QtGui import QDragEnterEvent, QDropEvent
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
 import vtk
 
@@ -44,6 +45,39 @@ from urdf_parser import URDFParser
 from urdf_vtk_model import URDFModel
 
 
+class DragDropVTKWidget(QVTKRenderWindowInteractor):
+    """Custom VTK widget that supports drag-and-drop of URDF files"""
+    
+    def __init__(self, parent=None):
+        super().__init__()
+        self.parent_viewer = parent
+        self.setAcceptDrops(True)
+    
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        """Handle drag enter event"""
+        if event.mimeData().hasUrls():
+            # Check if any of the dragged files is a URDF file
+            for url in event.mimeData().urls():
+                if url.isLocalFile():
+                    file_path = url.toLocalFile()
+                    if file_path.lower().endswith('.urdf'):
+                        event.acceptProposedAction()
+                        return
+        event.ignore()
+    
+    def dropEvent(self, event: QDropEvent):
+        """Handle drop event"""
+        if event.mimeData().hasUrls():
+            for url in event.mimeData().urls():
+                if url.isLocalFile():
+                    file_path = url.toLocalFile()
+                    if file_path.lower().endswith('.urdf'):
+                        # Load the URDF file
+                        if self.parent_viewer:
+                            self.parent_viewer.load_urdf_file(file_path)
+                        event.acceptProposedAction()
+                        return
+        event.ignore()
 
 
 class URDFViewer(QMainWindow):
@@ -169,8 +203,8 @@ class URDFViewer(QMainWindow):
         # Set fixed width for left panel
         left_panel.setFixedWidth(300)
 
-        # Create VTK widget for 3D visualization
-        self.vtk_widget = QVTKRenderWindowInteractor()
+        # Create VTK widget for 3D visualization with drag-and-drop support
+        self.vtk_widget = DragDropVTKWidget(self)
 
         # Create a scroll area for joint controls
         joint_scroll_area = QScrollArea()
@@ -253,13 +287,9 @@ class URDFViewer(QMainWindow):
         # Add the axes to the renderer
         self.renderer.AddActor(axes)
 
-    def open_urdf_file(self):
-        """Open a URDF file and visualize the robot"""
-        filename, _ = QFileDialog.getOpenFileName(
-            self, "Open URDF File", "", "URDF Files (*.urdf)"
-        )
-
-        if filename:
+    def load_urdf_file(self, filename):
+        """Load a URDF file and visualize the robot"""
+        if filename and os.path.exists(filename):
             # Clear previous models
             self.clear_models()
 
@@ -323,6 +353,15 @@ class URDFViewer(QMainWindow):
             #     QMessageBox.critical(
             #         self, "Error", f"Failed to load URDF file: {str(e)}"
             #     )
+    
+    def open_urdf_file(self):
+        """Open a URDF file dialog and load the selected file"""
+        filename, _ = QFileDialog.getOpenFileName(
+            self, "Open URDF File", "", "URDF Files (*.urdf)"
+        )
+        
+        if filename:
+            self.load_urdf_file(filename)
 
     def add_urdf_model(self, name, mesh_file, mesh_transform, frame, color):
         """Add a URDF model to the scene"""
