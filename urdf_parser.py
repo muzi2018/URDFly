@@ -51,6 +51,27 @@ class URDFParser:
                             "mesh": None,
                         }
 
+            collision = link.find("collision")
+            if collision is not None:
+                geometry = collision.find("geometry")
+                if geometry is not None:
+                    mesh = geometry.find("mesh")
+                    if link.get('name') in self.links:       
+                        if mesh is not None:
+                            filename = mesh.get("filename")
+                            # Store the mesh filename and its visual properties
+                            self.links[link.get("name")]['collision_mesh'] = filename
+                            self.links[link.get("name")]['collision_origin'] = self.parse_origin(collision.find("origin"))
+
+                        else:
+                            self.links[link.get("name")]['collision_mesh'] = None
+                            self.links[link.get("name")]['collision_origin'] = None
+                else:
+                    if link.get('name') in self.links:    
+                        self.links[link.get("name")]['collision_mesh'] = None
+                        self.links[link.get("name")]['collision_origin'] = None
+
+
         # Extract all joints
         for joint in root.findall("joint"):
             joint_data = {
@@ -230,6 +251,9 @@ class URDFParser:
         link_frames = []
         link_colors = []
         
+        collision_mesh_files = []
+        collision_mesh_transformations = []
+        
         # For joint frames
         joint_names = []
         joint_frames = []
@@ -263,13 +287,29 @@ class URDFParser:
                 mesh_file = None
                 T_total = T
                 color = None
-            
+                
             link_names.append(name)
             link_mesh_files.append(mesh_file)
             link_mesh_transformations.append(T_total)
             link_frames.append(T)
-
             link_colors.append(color)
+                
+            # Process collision
+            if link_info.get("collision_mesh") is not None:
+                mesh_file = link_info["collision_mesh"]
+                if not os.path.isabs(mesh_file):
+                    mesh_file = os.path.join(self.mesh_dir, mesh_file)
+                mesh_file = os.path.normpath(mesh_file)
+                
+                T_collision = self.compute_transformation(
+                    link_info["collision_origin"]["rpy"], link_info["collision_origin"]["xyz"]
+                )
+
+                # Combine with the link's transformation
+                T_total = T @ T_collision
+                collision_mesh_files.append(mesh_file)
+                collision_mesh_transformations.append(T_total)
+
             
         # Process each joint
         for joint in self.joints:
@@ -310,6 +350,9 @@ class URDFParser:
             joint_axes,
             joint_parent_links,
             joint_child_links,
+            collision_mesh_files,
+            collision_mesh_transformations,
+
         )
     
     def build_multiple_trees(self):

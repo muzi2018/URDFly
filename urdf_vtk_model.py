@@ -62,8 +62,15 @@ class URDFModel:
         # Apply the transformation
         self.apply_transform(self.mesh_transform)
 
-        # Create coordinate axes for this link
-        self.axes_actor, self.text_actor = self.create_axes_actor(self.link_frame, axis_text=axis_text)
+        if link_frame is not None:
+
+            # Create coordinate axes for this link
+            self.axes_actor, self.text_actor = self.create_axes_actor(self.link_frame, axis_text=axis_text)
+        
+        else:
+            self.axes_actor = None
+            self.text_actor = None
+
 
     def set_random_color(self):
         """Set a random color for the model"""

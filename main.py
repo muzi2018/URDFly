@@ -86,6 +86,7 @@ class URDFViewer(QMainWindow):
     def __init__(self):
         super().__init__()
         self.models = []  # List to store loaded URDF models
+        self.models_collision = []
         self.chains = []  # List to store kinematic chains
         self.mdh_frames_actors = []  # List to store MDH frame actors
         self.mdh_text_actors = []  # List to store MDH frame text actors
@@ -186,8 +187,14 @@ class URDFViewer(QMainWindow):
         self.cb_mdh_frames.setChecked(False)
         self.cb_mdh_frames.stateChanged.connect(self.toggle_mdh_frames)
         
+        self.cb_collision = QCheckBox("Show Collision")
+        self.cb_collision.setChecked(True)
+        self.cb_collision.stateChanged.connect(self.toggle_collision)
+        
         visibility_layout.addWidget(self.cb_link_frames)
         visibility_layout.addWidget(self.cb_mdh_frames)
+        visibility_layout.addWidget(self.cb_collision)
+
         visibility_group.setLayout(visibility_layout)
 
         # Add widgets to left panel
@@ -308,7 +315,10 @@ class URDFViewer(QMainWindow):
                 joint_types,
                 joint_axes,
                 joint_parent_links,
-                joint_child_links) = parser.get_robot_info()
+                joint_child_links,
+                collision_mesh_files,
+                collision_mesh_transformations,
+                ) = parser.get_robot_info()
                 
                 # Store revolute joints for slider controls
                 self.revolute_joints = []
@@ -337,6 +347,18 @@ class URDFViewer(QMainWindow):
                         link_frames[i],
                         link_colors[i],
                     )
+                    
+                # Create models for each collision link
+                for i in range(len(collision_mesh_files)):
+                    self.add_urdf_model(
+                        f"",
+                        collision_mesh_files[i],
+                        collision_mesh_transformations[i],
+                        None,
+                        None,
+                        model_type='collision'
+                    )
+
                 
                 # Populate the chain tree
                 self.populate_chain_tree()
@@ -362,7 +384,8 @@ class URDFViewer(QMainWindow):
         if filename:
             self.load_urdf_file(filename)
 
-    def add_urdf_model(self, name, mesh_file, mesh_transform, frame, color):
+    def add_urdf_model(self, name, mesh_file, mesh_transform, frame, color, model_type='visual'):
+
         """Add a URDF model to the scene"""
         try:
             # Create a new URDF model with axis text (using link name as the text)
@@ -373,14 +396,18 @@ class URDFViewer(QMainWindow):
                 transparency = self.transparency_slider.value() / 100.0
                 model.set_transparency(transparency)
 
-            # Add the model to our list
-            self.models.append(model)
+             # Add the model to our list
+            if model_type == 'visual':
+                self.models.append(model)
+            elif model_type == 'collision':
+                self.models_collision.append(model)
 
             # Add the actor to the renderer
             self.renderer.AddActor(model.actor)
 
             # Add the axes actor to the renderer
-            self.renderer.AddActor(model.axes_actor)
+            if model.axes_actor is not None:
+                self.renderer.AddActor(model.axes_actor)
             
             # Add the text actor to the renderer if it exists
             if model.text_actor is not None:
@@ -388,7 +415,8 @@ class URDFViewer(QMainWindow):
             
             # Set initial visibility based on checkbox
             if hasattr(self, "cb_link_frames"):
-                model.axes_actor.SetVisibility(self.cb_link_frames.isChecked())
+                if model.axes_actor is not None:
+                    model.axes_actor.SetVisibility(self.cb_link_frames.isChecked())
                 if model.text_actor is not None:
                     model.text_actor.SetVisibility(self.cb_link_frames.isChecked())
 
@@ -405,9 +433,17 @@ class URDFViewer(QMainWindow):
             self.renderer.RemoveActor(model.axes_actor)
             if hasattr(model, 'text_actor') and model.text_actor is not None:
                 self.renderer.RemoveActor(model.text_actor)
+                
+        for model in self.models_collision:
+            self.renderer.RemoveActor(model.actor)
+            self.renderer.RemoveActor(model.axes_actor)
+            if hasattr(model, 'text_actor') and model.text_actor is not None:
+                self.renderer.RemoveActor(model.text_actor)
 
         # Clear the models list
         self.models = []
+        self.models_collision = []
+
 
         # Clear the combo box and link list
         self.chain_combo.clear()
@@ -497,6 +533,19 @@ class URDFViewer(QMainWindow):
                 if model.name == link_name:
                     model.highlight()
                     print(model.link_frame)
+        # Update the rendering
+        self.vtk_widget.GetRenderWindow().Render()
+        
+    def toggle_collision(self, state):
+        visible = state == Qt.Checked
+        
+        for model in self.models_collision:
+            model.actor.SetVisibility(visible)
+            if model.axes_actor is not None:
+                model.axes_actor.SetVisibility(visible)
+            if hasattr(model, 'text_actor') and model.text_actor is not None:
+                model.text_actor.SetVisibility(visible)
+        
         # Update the rendering
         self.vtk_widget.GetRenderWindow().Render()
 
@@ -795,7 +844,10 @@ class URDFViewer(QMainWindow):
         joint_types,
         joint_axes,
         joint_parent_links,
-        joint_child_links) = parser.get_robot_info(qs=self.joint_values)
+        joint_child_links,
+        collision_mesh_files,
+        collision_mesh_transformations,
+        ) = parser.get_robot_info(qs=self.joint_values)
         
         # Update existing models with new transformations
         for i, model in enumerate(self.models):
@@ -816,6 +868,25 @@ class URDFViewer(QMainWindow):
                     vtk_transform.SetMatrix(link_frames[i].flatten())
                     transformed_point = vtk_transform.TransformPoint(z_endpoint[0], z_endpoint[1], z_endpoint[2])
                     model.text_actor.SetAttachmentPoint(transformed_point[0], transformed_point[1], transformed_point[2])
+                    
+        # Update existing models with new transformations
+        for i, model in enumerate(self.models_collision):
+            # Update mesh transformation
+            model.apply_transform(collision_mesh_transformations[i])
+            
+            # Update axes and text actors
+            if model.axes_actor:
+                vtk_transform = vtk.vtkTransform()
+                vtk_transform.SetMatrix(collision_mesh_transformations[i].flatten())
+                model.axes_actor.SetUserTransform(vtk_transform)
+            
+            if model.text_actor:
+                # Update text position based on new frame
+                z_endpoint = [0, 0, 0.05, 1]  # Same axis_length as in create_axes_actor
+                vtk_transform = vtk.vtkTransform()
+                vtk_transform.SetMatrix(collision_mesh_transformations[i].flatten())
+                transformed_point = vtk_transform.TransformPoint(z_endpoint[0], z_endpoint[1], z_endpoint[2])
+                model.text_actor.SetAttachmentPoint(transformed_point[0], transformed_point[1], transformed_point[2])
         
         # Update MDH frames if they are visible
         if hasattr(self, 'cb_mdh_frames') and self.cb_mdh_frames.isChecked() and self.selected_chain:
@@ -862,7 +933,9 @@ class URDFViewer(QMainWindow):
             joint_types,
             joint_axes,
             joint_parent_links,
-            joint_child_links) = parser.get_robot_info()
+            joint_child_links,
+            collision_mesh_files,
+            collision_mesh_transformations,) = parser.get_robot_info()
             
             # Store revolute joints for slider controls
             self.revolute_joints = []
@@ -890,6 +963,17 @@ class URDFViewer(QMainWindow):
                     link_mesh_transformations[i],
                     link_frames[i],
                     link_colors[i],
+                )
+                
+            # Create models for each collision link
+            for i in range(len(collision_mesh_files)):
+                self.add_urdf_model(
+                    f"",
+                    collision_mesh_files[i],
+                    collision_mesh_transformations[i],
+                    None,
+                    None,
+                    model_type='collision'
                 )
             
             # Populate the chain tree
