@@ -18,6 +18,7 @@ class URDFModel:
             self.source.SetPhiResolution(20)
             self.source.SetThetaResolution(20)
             self.source.Update()
+            color = [1.0, 0, 0]
         else:
             # Get file extension to determine the appropriate reader
             _, file_extension = os.path.splitext(mesh_file)

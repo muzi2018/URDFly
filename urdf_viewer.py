@@ -294,8 +294,7 @@ class URDFViewer(QMainWindow):
             self.clear_models()
 
             # Parse the URDF file
-            # try:
-            if True:
+            try:
                 parser = URDFParser(filename)
                 
                 # Get robot info for visualization
@@ -349,10 +348,10 @@ class URDFViewer(QMainWindow):
                 # Store the current URDF file path only after successful loading
                 self.current_urdf_file = filename
 
-            # except Exception as e:
-            #     QMessageBox.critical(
-            #         self, "Error", f"Failed to load URDF file: {str(e)}"
-            #     )
+            except Exception as e:
+                QMessageBox.critical(
+                    self, "Error", f"Failed to load URDF file: {str(e)}"
+                )
     
     def open_urdf_file(self):
         """Open a URDF file dialog and load the selected file"""
@@ -497,7 +496,7 @@ class URDFViewer(QMainWindow):
             for model in self.models:
                 if model.name == link_name:
                     model.highlight()
-        
+                    print(model.link_frame)
         # Update the rendering
         self.vtk_widget.GetRenderWindow().Render()
 

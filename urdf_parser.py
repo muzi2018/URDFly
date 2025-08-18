@@ -845,25 +845,30 @@ if __name__ == "__main__":
     print("ori=\n", ori)
     
     
-    # p.connect(p.DIRECT)
+    p.connect(p.DIRECT)
     
-    # robot_id = p.loadURDF(urdf_path, useFixedBase=True)
+    robot_id = p.loadURDF(urdf_path, useFixedBase=True)
     
-    # valid_joints = []
-    # for i in range(p.getNumJoints(robot_id)):
-    #     info = p.getJointInfo(robot_id, i)
-    #     if info[2] == p.JOINT_REVOLUTE:
-    #         valid_joints.append(i)
+    valid_joints = []
+    for i in range(p.getNumJoints(robot_id)):
+        info = p.getJointInfo(robot_id, i)
+        if info[2] == p.JOINT_REVOLUTE:
+            valid_joints.append(i)
 
 
-    # for i, joint_position in zip(valid_joints, q):
-    #     p.setJointMotorControl2(robot_id, i, p.POSITION_CONTROL, joint_position)
+    for i, joint_position in zip(valid_joints, q):
+        p.setJointMotorControl2(robot_id, i, p.POSITION_CONTROL, joint_position)
         
-    # for i in range(200):
-    #     p.stepSimulation()
+    for i in range(200):
+        p.stepSimulation()
         
-    # link_state = p.getLinkState(robot_id, 6)
-    # position = link_state[4]  # Position of the link
-    # orientation = link_state[5]  # Orientation of the link (quaternion)
+    link_state = p.getLinkState(robot_id, 6)
+    position = link_state[4]  # Position of the link
+    orientation = link_state[5]  # Orientation of the link (quaternion)
 
-    # orientation = p.getMatrixFromQuaternion(orientation)
+    orientation = p.getMatrixFromQuaternion(orientation)
+
+
+    print('bullet:')
+    print(position)
+    print(orientation)
