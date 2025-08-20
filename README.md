@@ -1,7 +1,6 @@
 # URDFly
 
 ![GX7 Robot Arm](assets/gx7.png)
-![alt text](assets/schunk.png)
 ![Poppy Robot](assets/poppy.png)
 
 ## Overview
@@ -24,6 +23,9 @@ URDFly is a Python-based toolkit for working with URDF (Unified Robot Descriptio
 - Support highligt link by clicking the Links list.
 - Support original link axes visualization and M-DH axes visualization
 - Support virtual link visualization by a read sphere.
+- Support collision mesh visualization
+
+![alt text](assets/gx7_collision.png)
 
 ### MDH Parameter Conversion
 
@@ -31,9 +33,23 @@ The project includes a tool for converting URDF to Modified DH (MDH) parameters.
 
 ![alt text](assets/gx7-mdh.png)
 
-The MDH can be used to calculate the forward kinematics of the robot and generate dynamics regressor for dynamics identification.
+The MDH can be used to calculate the forward kinematics of the robot and generate dynamics regressor (this takes a while) for dynamics identification.
 
 ![alt text](assets/gx7-mdh-fk.png)
+
+### URDF Editing and Visualization
+
+The project includes a editor for URDF file. Clicking the `Edit URDF` button can open the editor. Clincking the `update` button will update the visulazation from the modified urdf. The editor provides searching and autofill of different `pi` with adjustable precision.
+
+![alt text](assets/urdf-editor.png)
+
+### Convex Decomposition
+
+URDFly provides a utility to decompose collision meshes into convex shapes, which can be useful for physics simulations and collision detection. Clicking the `Decompose As Collision` button and editing the `maxConvexHulls` parameter can decompose the collision mesh into a specified number of convex hulls.
+
+![alt text](assets/convex_decomp.png)
+
+After clicking `ok` (this will take a while to do the convex decomposition) the URDF editor will pop up and clicking `update` button will update the visulazation from the modified urdf.
 
 ## Installation
 

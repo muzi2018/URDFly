@@ -135,7 +135,7 @@ class XMLEditor(QMainWindow):
         
         # Get screen size and calculate center position
         screen = QDesktopWidget().availableGeometry()
-        x = (screen.width() - window_width) // 2
+        x = (screen.width() - window_width) // 2 - window_width // 2
         y = (screen.height() - window_height) // 2
         
         # Set window geometry to be centered on screen
