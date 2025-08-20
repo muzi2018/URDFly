@@ -17,10 +17,11 @@ from PyQt5.QtWidgets import (
     QLabel,
     QSplitter,
     QShortcut,
-    QDesktopWidget
+    QDesktopWidget,
+    QLineEdit
 )
-from PyQt5.QtCore import Qt, QSize, pyqtSignal
-from PyQt5.QtGui import QFont, QKeySequence, QTextCharFormat, QColor, QSyntaxHighlighter
+from PyQt5.QtCore import Qt, QSize, pyqtSignal, QRegExp
+from PyQt5.QtGui import QFont, QKeySequence, QTextCharFormat, QColor, QSyntaxHighlighter, QTextCursor, QTextDocument
 
 
 class XMLHighlighter(QSyntaxHighlighter):
@@ -115,6 +116,9 @@ class XMLEditor(QMainWindow):
         super().__init__()
         self.file_path = file_path
         self.update_callback = update_callback
+        # Initialize search variables
+        self.last_search_text = ""
+        self.last_search_position = 0
         self.init_ui()
         
         if file_path:
@@ -162,6 +166,34 @@ class XMLEditor(QMainWindow):
         # Add toolbar to main layout
         main_layout.addLayout(toolbar_layout)
         
+        # Create search bar layout
+        search_layout = QHBoxLayout()
+        
+        # Create search label
+        search_label = QLabel("Search:")
+        search_layout.addWidget(search_label)
+        
+        # Create search input field
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Enter search text...")
+        self.search_input.returnPressed.connect(self.find_next)
+        search_layout.addWidget(self.search_input)
+        
+        # Create previous button
+        self.btn_prev = QPushButton("Previous")
+        self.btn_prev.clicked.connect(self.find_previous)
+        self.btn_prev.setToolTip("Find previous occurrence (Shift+F3)")
+        search_layout.addWidget(self.btn_prev)
+        
+        # Create next button
+        self.btn_next = QPushButton("Next")
+        self.btn_next.clicked.connect(self.find_next)
+        self.btn_next.setToolTip("Find next occurrence (F3)")
+        search_layout.addWidget(self.btn_next)
+        
+        # Add search layout to main layout
+        main_layout.addLayout(search_layout)
+        
         # Create text editor
         self.text_edit = QTextEdit()
         self.text_edit.setFont(QFont("Courier New", 10))
@@ -179,6 +211,13 @@ class XMLEditor(QMainWindow):
         # Create keyboard shortcuts
         self.shortcut_save = QShortcut(QKeySequence("Ctrl+S"), self)
         self.shortcut_save.activated.connect(self.save_file_as)
+        
+        # Create search shortcuts
+        self.shortcut_find_next = QShortcut(QKeySequence("F3"), self)
+        self.shortcut_find_next.activated.connect(self.find_next)
+        
+        self.shortcut_find_prev = QShortcut(QKeySequence("Shift+F3"), self)
+        self.shortcut_find_prev.activated.connect(self.find_previous)
         
         # Update file path label
         self.update_file_path_label()
@@ -235,6 +274,114 @@ class XMLEditor(QMainWindow):
             self.update_callback(content)
         else:
             QMessageBox.warning(self, "Warning", "Update callback not set.")
+    
+    def find_text(self, text, forward=True, start_position=None):
+        """Find text in the editor
+        
+        Args:
+            text (str): Text to find
+            forward (bool): Search direction, True for forward, False for backward
+            start_position (int, optional): Starting position for the search. 
+                                           If None, uses the current cursor position.
+        
+        Returns:
+            bool: True if text was found, False otherwise
+        """
+        if not text:
+            return False
+        
+        # Save the search text for next/previous operations
+        self.last_search_text = text
+        
+        # Get the current cursor
+        cursor = self.text_edit.textCursor()
+        
+        # Set the starting position
+        if start_position is not None:
+            cursor.setPosition(start_position)
+        elif not forward:
+            # For backward search, move cursor to the beginning of the current selection
+            cursor.setPosition(cursor.selectionStart())
+        
+        # Create a new cursor for searching
+        document = self.text_edit.document()
+        find_cursor = QTextCursor(document)
+        
+        # Set search flags
+        flags = QTextDocument.FindFlags()
+        if not forward:
+            flags |= QTextDocument.FindBackward
+        
+        # Find the text
+        if start_position is not None:
+            find_cursor.setPosition(start_position)
+            find_cursor = document.find(text, find_cursor, flags)
+        else:
+            find_cursor = document.find(text, cursor, flags)
+        
+        # If text was found
+        if not find_cursor.isNull():
+            # Select the found text
+            self.text_edit.setTextCursor(find_cursor)
+            # Save the position for next search
+            self.last_search_position = find_cursor.position()
+            return True
+        else:
+            # If not found from the current position, try from the beginning/end
+            if forward:
+                cursor.movePosition(QTextCursor.Start)
+            else:
+                cursor.movePosition(QTextCursor.End)
+            
+            find_cursor = document.find(text, cursor, flags)
+            
+            if not find_cursor.isNull():
+                # Select the found text
+                self.text_edit.setTextCursor(find_cursor)
+                # Save the position for next search
+                self.last_search_position = find_cursor.position()
+                return True
+            else:
+                # Text not found
+                return False
+    
+    def find_next(self):
+        """Find the next occurrence of the search text"""
+        text = self.search_input.text()
+        if text:
+            # If the search text has changed, start from the beginning
+            if text != self.last_search_text:
+                self.last_search_position = 0
+            
+            # Start from the end of the current selection
+            cursor = self.text_edit.textCursor()
+            start_pos = cursor.selectionEnd()
+            
+            # Find the next occurrence
+            found = self.find_text(text, forward=True, start_position=start_pos)
+            
+            if not found:
+                QMessageBox.information(self, "Search", "No more occurrences found.")
+    
+    def find_previous(self):
+        """Find the previous occurrence of the search text"""
+        text = self.search_input.text()
+        if text:
+            # If the search text has changed, start from the end
+            if text != self.last_search_text:
+                cursor = self.text_edit.textCursor()
+                cursor.movePosition(QTextCursor.End)
+                self.last_search_position = cursor.position()
+            
+            # Start from the beginning of the current selection
+            cursor = self.text_edit.textCursor()
+            start_pos = cursor.selectionStart()
+            
+            # Find the previous occurrence
+            found = self.find_text(text, forward=False, start_position=start_pos)
+            
+            if not found:
+                QMessageBox.information(self, "Search", "No more occurrences found.")
     
     def closeEvent(self, event):
         """Handle window close event"""
