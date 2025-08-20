@@ -206,6 +206,12 @@ class URDFViewer(QMainWindow):
         left_layout.addWidget(transparency_group)
         left_layout.addWidget(visibility_group)
         left_layout.addStretch()
+        
+        # Add current file label at the bottom of left panel
+        self.current_file_label = QLabel("Current File: None")
+        self.current_file_label.setWordWrap(True)
+        self.current_file_label.setAlignment(Qt.AlignLeft | Qt.AlignBottom)
+        left_layout.addWidget(self.current_file_label)
 
         # Set fixed width for left panel
         left_panel.setFixedWidth(300)
@@ -369,6 +375,9 @@ class URDFViewer(QMainWindow):
                 
                 # Store the current URDF file path only after successful loading
                 self.current_urdf_file = filename
+                
+                # Update the current file label
+                self.update_current_file_label()
 
             except Exception as e:
                 QMessageBox.critical(
@@ -465,6 +474,9 @@ class URDFViewer(QMainWindow):
         # Reset selected chain and current URDF file
         self.selected_chain = None
         self.current_urdf_file = None
+        
+        # Update current file label
+        self.update_current_file_label()
 
         # Update the rendering
         self.vtk_widget.GetRenderWindow().Render()
@@ -996,6 +1008,9 @@ class URDFViewer(QMainWindow):
             # This allows further editing and updates
             self.current_urdf_file = temp_path
             
+            # Update current file label
+            self.update_current_file_label()
+            
             # Clean up the temporary file
             # os.unlink(temp_path)  # Commented out to keep the file for further editing
             
@@ -1003,6 +1018,15 @@ class URDFViewer(QMainWindow):
             QMessageBox.critical(
                 self, "Error", f"Failed to update model from XML: {str(e)}"
             )
+    
+    def update_current_file_label(self):
+        """Update the current file label with the current URDF file path"""
+        if self.current_urdf_file:
+            # Extract just the filename from the path for cleaner display
+            filename = os.path.basename(self.current_urdf_file)
+            self.current_file_label.setText(f"Current File: {filename}")
+        else:
+            self.current_file_label.setText("Current File: None")
     
     def closeEvent(self, event):
         """Handle window close event"""
