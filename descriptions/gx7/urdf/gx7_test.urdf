@@ -27,11 +27,11 @@
         <mesh filename="../meshes/base_link.STL" />
       </geometry>
       <material name="">
-        <color rgba="0.08 0.08 0.08 1" />
+        <color rgba="0.28 0.28 0.28 1" />
       </material>
     </visual>
     <collision>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <origin xyz="0 0 0" rpy="0 -1.5707963 0" />
       <geometry>
         <mesh filename="../meshes/base_link.STL" />
       </geometry>
@@ -49,7 +49,7 @@
         <mesh filename="../meshes/Link1.STL" />
       </geometry>
       <material name="">
-        <color rgba="0.08 0.08 0.08 1" />
+        <color rgba="0.28 0.28 0.28 1" />
       </material>
     </visual>
     <collision>
@@ -64,7 +64,7 @@
     <parent link="base_link" />
     <child link="Link1" />
     <axis xyz="0 0 1" />
-    <limit lower="-2.0944" upper="2.0944" effort="5" velocity="3.2" />
+    <limit lower="-3.141592615" upper="3.141592615" effort="5" velocity="3.2" />
   </joint>
   <link name="Link2">
     <inertial>
@@ -78,7 +78,7 @@
         <mesh filename="../meshes/Link2.STL" />
       </geometry>
       <material name="">
-        <color rgba="0.08 0.08 0.08 1" />
+        <color rgba="0.28 0.28 0.28 1" />
       </material>
     </visual>
     <collision>
@@ -93,7 +93,7 @@
     <parent link="Link1" />
     <child link="Link2" />
     <axis xyz="0 0 1" />
-    <limit lower="0" upper="3.141592615" effort="5" velocity="3.2" />
+    <limit lower="-3.141592615" upper="3.141592615" effort="5" velocity="3.2" />
   </joint>
   <link name="Link3">
     <inertial>
@@ -107,7 +107,7 @@
         <mesh filename="../meshes/Link3.STL" />
       </geometry>
       <material name="">
-        <color rgba="0.08 0.08 0.08 1" />
+        <color rgba="0.28 0.28 0.28 1" />
       </material>
     </visual>
     <collision>
@@ -122,7 +122,7 @@
     <parent link="Link2" />
     <child link="Link3" />
     <axis xyz="0 0 1" />
-    <limit lower="-2.0944" upper="2.0944" effort="5" velocity="3.2" />
+    <limit lower="-3.141592615" upper="3.141592615" effort="5" velocity="3.2" />
   </joint>
   <link name="Link4">
     <inertial>
@@ -136,7 +136,7 @@
         <mesh filename="../meshes/Link4.STL" />
       </geometry>
       <material name="">
-        <color rgba="0.08 0.08 0.08 1" />
+        <color rgba="0.28 0.28 0.28 1" />
       </material>
     </visual>
     <collision>
@@ -151,7 +151,7 @@
     <parent link="Link3" />
     <child link="Link4" />
     <axis xyz="0 0 1" />
-    <limit lower="0" upper="3.141592615" effort="5" velocity="3.2" />
+    <limit lower="-3.141592615" upper="3.141592615" effort="5" velocity="3.2" />
   </joint>
   <link name="Link5">
     <inertial>
@@ -165,7 +165,7 @@
         <mesh filename="../meshes/Link5.STL" />
       </geometry>
       <material name="">
-        <color rgba="0.08 0.08 0.08 1" />
+        <color rgba="0.28 0.28 0.28 1" />
       </material>
     </visual>
     <collision>
@@ -180,7 +180,7 @@
     <parent link="Link4" />
     <child link="Link5" />
     <axis xyz="0 0 1" />
-    <limit lower="-2.0944" upper="2.0944" effort="5" velocity="3.2" />
+    <limit lower="-3.141592615" upper="3.141592615" effort="5" velocity="3.2" />
   </joint>
   <link name="Link6">
     <inertial>
@@ -194,7 +194,7 @@
         <mesh filename="../meshes/Link6.STL" />
       </geometry>
       <material name="">
-        <color rgba="0.08 0.08 0.08 1" />
+        <color rgba="0.28 0.28 0.28 1" />
       </material>
     </visual>
     <collision>
@@ -209,7 +209,7 @@
     <parent link="Link5" />
     <child link="Link6" />
     <axis xyz="0 0 1" />
-    <limit lower="-1.5707963" upper="1.5707963" effort="5" velocity="3.2" />
+    <limit lower="-3.141592615" upper="3.141592615" effort="5" velocity="3.2" />
   </joint>
   <link name="Link7">
     <inertial>

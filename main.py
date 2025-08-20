@@ -569,7 +569,7 @@ class URDFViewer(QMainWindow):
         if visible:
             if not self.current_urdf_file:
                 QMessageBox.warning(
-                    self, "Warning", "Please load a URDF file first."
+                    self, "Warning", "Please load a URDF file first. [MDH]"
                 )
                 self.cb_mdh_frames.setChecked(False)
                 return
@@ -684,7 +684,7 @@ class URDFViewer(QMainWindow):
         
         if not self.current_urdf_file:
             QMessageBox.warning(
-                self, "Warning", "Please load a URDF file first."
+                self, "Warning", "Please load a URDF file first. [SHOW MDH]"
             )
             return
         
@@ -719,6 +719,9 @@ class URDFViewer(QMainWindow):
 
         # Apply the transparency to all models
         for model in self.models:
+            model.set_transparency(transparency)
+        
+        for model in self.models_collision:
             model.set_transparency(transparency)
 
         # Update the rendering
@@ -899,7 +902,7 @@ class URDFViewer(QMainWindow):
         """Open the current URDF file in the XML editor"""
         if not self.current_urdf_file:
             QMessageBox.warning(
-                self, "Warning", "Please load a URDF file first."
+                self, "Warning", "Please load a URDF file first. [Edit]"
             )
             return
         
@@ -912,7 +915,11 @@ class URDFViewer(QMainWindow):
         try:
             # Create a temporary file to store the XML content
             
-            temp_path = self.current_urdf_file.lower().replace('.urdf', '_temp.urdf')
+            if '_temp.urdf' not in self.current_urdf_file:
+                temp_path = self.current_urdf_file.lower().replace('.urdf', '_temp.urdf')
+            else:
+                temp_path = self.current_urdf_file.lower()
+            
             with open(temp_path, 'w', encoding='utf-8')as temp_file:
                 temp_file.write(xml_content)
             
@@ -975,12 +982,14 @@ class URDFViewer(QMainWindow):
                     None,
                     model_type='collision'
                 )
+                
+            self.cb_collision.setChecked(True)
             
             # Populate the chain tree
             self.populate_chain_tree()
 
             # Reset camera to show all actors
-            self.renderer.ResetCamera()
+            # self.renderer.ResetCamera()
             self.vtk_widget.GetRenderWindow().Render()
             
             # Store the temporary file path as the current URDF file
