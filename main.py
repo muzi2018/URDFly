@@ -373,7 +373,10 @@ class URDFViewer(QMainWindow):
                         None,
                         model_type='collision'
                     )
-                self.collision_mesh_files = collision_mesh_files
+                    
+                
+                # use link mesh files to be decomposed
+                self.collision_mesh_files = [f for f in link_mesh_files if f is not None]
 
                 
                 # Populate the chain tree
