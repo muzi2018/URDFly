@@ -441,6 +441,51 @@ class XMLEditor(QMainWindow):
         # Insert the formatted value at the current cursor position
         cursor = self.text_edit.textCursor()
         cursor.insertText(formatted_value)
+        
+    def replace_collision(self):
+        """Replace collision mesh filenames by adding '_approx' before the file extension
+        
+        This function modifies the URDF content by finding all collision mesh filenames
+        and adding '_approx' before the file extension. For example:
+        "../meshes/Link6.STL" becomes "../meshes/Link6_approx.STL"
+            
+        Returns:
+            str: The modified URDF XML content
+        """
+        content = self.text_edit.toPlainText()
+        import re
+        
+        # Regular expression to find collision mesh filenames
+        # This pattern looks for:
+        # 1. <collision> tag
+        # 2. Any content until it finds a <mesh> tag with a filename attribute
+        # 3. The filename attribute value
+        pattern = r'(<collision>.*?<mesh\s+filename=")([^"]+)(".*?</collision>)'
+        
+        # Function to replace the filename by adding '_approx' before the extension
+        def add_approx(match):
+            prefix = match.group(1)  # The part before the filename
+            filename = match.group(2)  # The filename
+            suffix = match.group(3)  # The part after the filename
+            
+            # Split the filename into base and extension
+            import os
+            base, ext = os.path.splitext(filename)
+            
+            # Add '_approx' before the extension
+            if '_approx' in base:
+                new_filename = base + ext  # Already has '_approx', keep as is
+            else:
+                new_filename = f"{base}_approx{ext}"
+            
+            # Return the modified string
+            return f"{prefix}{new_filename}{suffix}"
+        
+        # Replace all occurrences in the content using re.sub with the DOTALL flag
+        # to make '.' match newlines as well
+        modified_content = re.sub(pattern, add_approx, content, flags=re.DOTALL)
+        
+        self.text_edit.setPlainText(modified_content)
 
 
 if __name__ == "__main__":
@@ -450,6 +495,7 @@ if __name__ == "__main__":
     file_path = sys.argv[1] if len(sys.argv) > 1 else None
     
     editor = XMLEditor(file_path)
+    editor.replace_collision()
     editor.show()
     
     sys.exit(app.exec_())

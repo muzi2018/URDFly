@@ -36,6 +36,7 @@ from PyQt5.QtWidgets import (
 )
 from xml_editor import XMLEditor
 from mdh_dialog import MDHDialog
+from decomp_dialog import DecompDialog
 from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QDragEnterEvent, QDropEvent
 from vtk.qt.QVTKRenderWindowInteractor import QVTKRenderWindowInteractor
@@ -43,6 +44,7 @@ import vtk
 
 from urdf_parser import URDFParser
 from urdf_vtk_model import URDFModel
+from simplify_mesh import create_detailed_approximation
 
 
 class DragDropVTKWidget(QVTKRenderWindowInteractor):
@@ -93,6 +95,8 @@ class URDFViewer(QMainWindow):
         self.selected_chain = None  # Currently selected chain
         self.selected_chain_index = 0  # Index of the currently selected chain
         self.current_urdf_file = None  # Path to the currently loaded URDF file
+        self.collision_mesh_files = None
+        
         self.joint_sliders = []  # List to store joint angle sliders
         self.joint_values = []  # List to store joint angle values
         self.revolute_joints = []  # List to store revolute joints
@@ -157,13 +161,16 @@ class URDFViewer(QMainWindow):
         # Create MDH button
         btn_mdh = QPushButton("Show MDH Parameters")
         btn_mdh.clicked.connect(self.show_mdh_parameters)
+        
+        btn_decomp = QPushButton("Decompose As Collision")
+        btn_decomp.clicked.connect(self.decompose_collision_meshes)
 
         # Create transparency controls
         transparency_group = QGroupBox("")
         transparency_layout = QVBoxLayout()
 
         # Transparency slider
-        transparency_layout.addWidget(QLabel("Transparency (All Links):"))
+        transparency_layout.addWidget(QLabel("Transparency:"))
         self.transparency_slider = QSlider(Qt.Horizontal)
         self.transparency_slider.setMinimum(0)
         self.transparency_slider.setMaximum(100)
@@ -176,7 +183,7 @@ class URDFViewer(QMainWindow):
         transparency_group.setLayout(transparency_layout)
 
         # Create checkboxes for frame visibility
-        visibility_group = QGroupBox("Frame Visibility")
+        visibility_group = QGroupBox("Visibility")
         visibility_layout = QVBoxLayout()
         
         self.cb_link_frames = QCheckBox("Show Link Frames")
@@ -203,6 +210,8 @@ class URDFViewer(QMainWindow):
         left_layout.addWidget(btn_open)
         left_layout.addWidget(btn_edit)
         left_layout.addWidget(btn_mdh)
+        left_layout.addWidget(btn_decomp)
+        
         left_layout.addWidget(transparency_group)
         left_layout.addWidget(visibility_group)
         left_layout.addStretch()
@@ -353,17 +362,18 @@ class URDFViewer(QMainWindow):
                         link_frames[i],
                         link_colors[i],
                     )
-                    
+                
                 # Create models for each collision link
                 for i in range(len(collision_mesh_files)):
                     self.add_urdf_model(
-                        f"",
+                        f"collision_{i}",
                         collision_mesh_files[i],
                         collision_mesh_transformations[i],
                         None,
                         None,
                         model_type='collision'
                     )
+                self.collision_mesh_files = collision_mesh_files
 
                 
                 # Populate the chain tree
@@ -399,11 +409,6 @@ class URDFViewer(QMainWindow):
         try:
             # Create a new URDF model with axis text (using link name as the text)
             model = URDFModel(name, mesh_file, mesh_transform, frame, color, axis_text=name)
-
-            # Apply current transparency setting to the new model
-            if hasattr(self, "transparency_slider"):
-                transparency = self.transparency_slider.value() / 100.0
-                model.set_transparency(transparency)
 
              # Add the model to our list
             if model_type == 'visual':
@@ -725,17 +730,14 @@ class URDFViewer(QMainWindow):
         dialog.exec_()
 
     def apply_transparency(self):
-        """Apply transparency to all loaded models"""
+        """Apply transparency to virtual loaded models"""
         # Get transparency value from slider (convert from 0-100 to 0.0-1.0)
         transparency = self.transparency_slider.value() / 100.0
 
-        # Apply the transparency to all models
+        # Apply the transparency to virtual models
         for model in self.models:
             model.set_transparency(transparency)
         
-        for model in self.models_collision:
-            model.set_transparency(transparency)
-
         # Update the rendering
         self.vtk_widget.GetRenderWindow().Render()
 
@@ -910,7 +912,7 @@ class URDFViewer(QMainWindow):
         # Update the rendering
         self.vtk_widget.GetRenderWindow().Render()
     
-    def edit_urdf_file(self):
+    def edit_urdf_file(self, replace_collision=False):
         """Open the current URDF file in the XML editor"""
         if not self.current_urdf_file:
             QMessageBox.warning(
@@ -920,6 +922,8 @@ class URDFViewer(QMainWindow):
         
         # Create and show the XML editor window with update callback
         self.editor = XMLEditor(self.current_urdf_file, self.update_model_from_xml)
+        if replace_collision:
+            self.editor.replace_collision()
         self.editor.show()
     
     def update_model_from_xml(self, xml_content):
@@ -996,6 +1000,7 @@ class URDFViewer(QMainWindow):
                 )
                 
             self.cb_collision.setChecked(True)
+            self.transparency_slider.setValue(100)
             
             # Populate the chain tree
             self.populate_chain_tree()
@@ -1011,9 +1016,6 @@ class URDFViewer(QMainWindow):
             # Update current file label
             self.update_current_file_label()
             
-            # Clean up the temporary file
-            # os.unlink(temp_path)  # Commented out to keep the file for further editing
-            
         except Exception as e:
             QMessageBox.critical(
                 self, "Error", f"Failed to update model from XML: {str(e)}"
@@ -1027,6 +1029,23 @@ class URDFViewer(QMainWindow):
             self.current_file_label.setText(f"Current File: {filename}")
         else:
             self.current_file_label.setText("Current File: None")
+            
+    def decompose_collision_meshes(self):
+        """Handle decomposition of collision meshes"""
+        if not self.collision_mesh_files:
+            QMessageBox.warning(
+                self, "Warning", "No collision meshes available. Please load a URDF file first."
+            )
+            return
+        
+        # Create and show the decomposition dialog
+        dialog = DecompDialog(self, self.collision_mesh_files)
+        
+        decomposed_mesh_files = dialog.exec_()
+
+        if decomposed_mesh_files is not None:
+            self.edit_urdf_file(replace_collision=True)
+
     
     def closeEvent(self, event):
         """Handle window close event"""
