@@ -18,9 +18,11 @@ from PyQt5.QtWidgets import (
     QSplitter,
     QShortcut,
     QDesktopWidget,
-    QLineEdit
+    QLineEdit,
+    QSpinBox
 )
 from PyQt5.QtCore import Qt, QSize, pyqtSignal, QRegExp
+import math
 from PyQt5.QtGui import QFont, QKeySequence, QTextCharFormat, QColor, QSyntaxHighlighter, QTextCursor, QTextDocument
 
 
@@ -193,6 +195,42 @@ class XMLEditor(QMainWindow):
         
         # Add search layout to main layout
         main_layout.addLayout(search_layout)
+        
+        # Create auto-fill layout
+        autofill_layout = QHBoxLayout()
+        
+        # Create pi buttons
+        self.btn_pi = QPushButton("π")
+        self.btn_pi.clicked.connect(lambda: self.insert_pi_value(math.pi))
+        self.btn_pi.setToolTip("Insert π value at cursor position")
+        autofill_layout.addWidget(self.btn_pi)
+        
+        self.btn_pi_half = QPushButton("π/2")
+        self.btn_pi_half.clicked.connect(lambda: self.insert_pi_value(math.pi/2))
+        self.btn_pi_half.setToolTip("Insert π/2 value at cursor position")
+        autofill_layout.addWidget(self.btn_pi_half)
+        
+        self.btn_pi_quarter = QPushButton("π/4")
+        self.btn_pi_quarter.clicked.connect(lambda: self.insert_pi_value(math.pi/4))
+        self.btn_pi_quarter.setToolTip("Insert π/4 value at cursor position")
+        autofill_layout.addWidget(self.btn_pi_quarter)
+        
+        # Add precision label and spinbox
+        precision_label = QLabel("Precision:")
+        autofill_layout.addWidget(precision_label)
+        
+        self.precision_spinbox = QSpinBox()
+        self.precision_spinbox.setMinimum(1)
+        self.precision_spinbox.setMaximum(15)
+        self.precision_spinbox.setValue(6)  # Default precision is 6
+        self.precision_spinbox.setToolTip("Number of decimal places for π values")
+        autofill_layout.addWidget(self.precision_spinbox)
+        
+        # Add spacer to push everything to the left
+        autofill_layout.addStretch()
+        
+        # Add auto-fill layout to main layout
+        main_layout.addLayout(autofill_layout)
         
         # Create text editor
         self.text_edit = QTextEdit()
@@ -387,6 +425,22 @@ class XMLEditor(QMainWindow):
         """Handle window close event"""
         # Accept the close event
         event.accept()
+        
+    def insert_pi_value(self, value):
+        """Insert a pi-related value at the current cursor position with specified precision
+        
+        Args:
+            value (float): The value to insert (pi, pi/2, or pi/4)
+        """
+        # Get the current precision setting
+        precision = self.precision_spinbox.value()
+        
+        # Format the value with the specified precision
+        formatted_value = f"{value:.{precision}f}"
+        
+        # Insert the formatted value at the current cursor position
+        cursor = self.text_edit.textCursor()
+        cursor.insertText(formatted_value)
 
 
 if __name__ == "__main__":
