@@ -21,7 +21,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QTextCharFormat, QColor, QSyntaxHighlighter
 
-from codegen import forward_kinematics, dynamic_base_regressor
+from codegen import forward_kinematics, dynamic_base_regressor, jacobian
+
 import re
 
 
@@ -301,8 +302,11 @@ class MDHDialog(QDialog):
         # TODO: Implement Jacobian calculation and code generation
         print("Jacobian button clicked")
         # For now, just show placeholder text
-        self.header_text_edit.setText("// Jacobian header code will be generated here")
-        self.cpp_text_edit.setText("// Jacobian implementation code will be generated here")
+        
+        jac = jacobian.JAC_SYM(self.mdh_parameters)
+        jac_code, jac_header = jac.gencpp()
+        self.header_text_edit.setText(jac_header)
+        self.cpp_text_edit.setText(jac_code)
         
     def on_dynamic_base_regressor(self):
         """Handle Dynamic Base Regressor button click"""

@@ -806,6 +806,7 @@ if __name__ == "__main__":
     import pybullet as p
     
     from codegen.forward_kinematics import FK_SYM
+    from codegen.jacobian import JAC_SYM
     
     
     from third_parties import urdf2dh
@@ -827,12 +828,12 @@ if __name__ == "__main__":
     
     fk = FK_SYM(mdh_parameters)
 
-    q = [0.] * fk.num_joints
+    q = [0.1] * fk.num_joints
     
     # global pos and rot
-    global_pos_rot = fk.return_global_pos_rot(*q)
-    print("global_pos=\n", global_pos_rot[:3, -1])
-    print("global_rot=\n", global_pos_rot[:3, :3])
+    global_pos_rot = fk.calc_fk(*q)
+    print("pos=\n", global_pos_rot[:3, -1])
+    print("ori=\n", global_pos_rot[:3, :3])
 
    
 
@@ -844,8 +845,7 @@ if __name__ == "__main__":
         
         mdh_config.append(rtb.RevoluteMDH(d=d, a=a, alpha=alpha, offset=theta))
 
-    robot = rtb.DHRobot(
-    mdh_config, name="gx7")
+    robot = rtb.DHRobot(mdh_config, name="gx7")
    
     
     T = robot.fkine(q).data[0]
@@ -858,35 +858,6 @@ if __name__ == "__main__":
     print("pos=\n", pos)
 
     print("ori=\n", ori)
-    
-    dh_generator = urdf2dh.GenerateDhParams(urdf_path)
-    dh_parameters = dh_generator.get_dh_parameters()
-
-
-    print('theta\td\ta\talpha')
-    
-    dh_config = []
-    for i, params in enumerate(dh_parameters):
-        theta, d, a, alpha = params
-        print(f'{theta:.4f}\t{d:.4f}\t{a:.4f}\t{alpha:.4f}')
-
-        dh_config.append(rtb.RevoluteDH(d=d, a=a, alpha=alpha, offset=theta))
-    
-    robot = rtb.DHRobot(
-    dh_config, name="gx7")
-    
-    T = robot.fkine(q).data[0]
-
-    pos = T[:3, 3]
-    
-    ori = T[:3, :3]
-    
-    print(q)
-    print('DH RTB')
-    print("pos=\n", pos)
-
-    print("ori=\n", ori)
-    
     
     p.connect(p.DIRECT)
     
@@ -910,8 +881,25 @@ if __name__ == "__main__":
     orientation = link_state[5]  # Orientation of the link (quaternion)
 
     orientation = p.getMatrixFromQuaternion(orientation)
+    
+    position = np.array(position)
+    ori = np.array(orientation).reshape(3, 3)
+
 
 
     print('bullet:')
-    print(position)
-    print(orientation)
+    print('pos=\n', position)
+    print('ori=\n', ori)
+
+
+    ##### JAC ######
+    
+    jac = JAC_SYM(mdh_parameters)
+    
+    jacobian = jac.calc_jac(*(q+[0]*3))
+    print("Jacobian:\n", jacobian)
+    
+    rtb_jacobian = robot.jacob0(q)
+    print("RTB Jacobian:\n", rtb_jacobian)
+    
+    bullet_jacobian = p.calculateJacobian(robot_id, 6, [0,0,0], list(q), [0]*len(q), [0]*len(q))

@@ -101,5 +101,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgments
 
-- Thanks to all contributors who have helped with the development of URDFly
-- Special thanks to the creators of the robot models used in this project
+- [sympybotics](https://github.com/sympybotics/sympybotics)
+- [urdf_to_dh] (<https://github.com/mcevoyandy/urdf_to_dh>)
