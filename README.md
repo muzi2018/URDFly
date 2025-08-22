@@ -94,6 +94,13 @@ For more detailed information, please refer to the documentation in the `docs/` 
 - [MDH Parameters Tutorial](docs/MDH_Parameters_Tutorial.md)
 - [Analytical IK Tutorial](docs/Analytical_IK_Tutorial.md)
 
+## Limitations
+
+- The `scale` in mesh tag of the urdf is not supported.
+- Only .STL and .OBJ mesh files are supported.
+- Only open loop chain is supported.
+- The MDH axes will not change from the joint sliders.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
