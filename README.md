@@ -113,3 +113,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - [sympybotics](https://github.com/cdsousa/SymPyBotics/tree/master/sympybotics)
 - [urdf_to_dh](https://github.com/mcevoyandy/urdf_to_dh)
+
+## Contact
+
+If you are interested in in-depth collaboration or secondary development, feel free to reach out to me.
+Email: <yunlongdong@outlook.com>
