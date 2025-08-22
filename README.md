@@ -104,5 +104,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Acknowledgments
 
-- [sympybotics](https://github.com/sympybotics/sympybotics)
-- [urdf_to_dh](<https://github.com/mcevoyandy/urdf_to_dh>)
+- [sympybotics](https://github.com/cdsousa/SymPyBotics/tree/master/sympybotics)
+- [urdf_to_dh](https://github.com/mcevoyandy/urdf_to_dh)
