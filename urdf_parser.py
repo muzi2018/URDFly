@@ -896,7 +896,7 @@ if __name__ == "__main__":
     
     jac = JAC_SYM(mdh_parameters)
     
-    jacobian = jac.calc_jac(*(q+[0]*3))
+    jacobian = jac.calc_jac(*(q+[0]*3)) # the last three are local xyz offset
     print("Jacobian:\n", jacobian)
     
     rtb_jacobian = robot.jacob0(q)

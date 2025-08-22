@@ -37,6 +37,8 @@ The MDH can be used to calculate the forward kinematics of the robot and generat
 
 ![alt text](assets/gx7-mdh-fk.png)
 
+The MDH can be used to generate the analytical inverse kinematics solution via `yaik`, see [Analytical IK Tutorial](docs/Analytical_IK_Tutorial.md).
+
 ### URDF Editing and Visualization
 
 The project includes a editor for URDF file. Clicking the `Edit URDF` button can open the editor. Clincking the `update` button will update the visulazation from the modified urdf. The editor provides searching and autofill of different `pi` with adjustable precision.
@@ -90,6 +92,7 @@ python main.py
 For more detailed information, please refer to the documentation in the `docs/` directory:
 
 - [MDH Parameters Tutorial](docs/MDH_Parameters_Tutorial.md)
+- [Analytical IK Tutorial](docs/Analytical_IK_Tutorial.md)
 
 ## Contributing
 
@@ -102,4 +105,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Acknowledgments
 
 - [sympybotics](https://github.com/sympybotics/sympybotics)
-- [urdf_to_dh] (<https://github.com/mcevoyandy/urdf_to_dh>)
+- [urdf_to_dh](<https://github.com/mcevoyandy/urdf_to_dh>)
