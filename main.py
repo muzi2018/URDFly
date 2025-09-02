@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import sys
+import copy
 import os
 import math
 import numpy as np
@@ -644,6 +645,9 @@ class URDFViewer(QMainWindow):
         
         # Get MDH frames using the current chain
         mdh_frames = parser.get_mdh_frames(current_chain)
+        # update mdh_frames using joint position
+
+        mdh_frames = parser.update_mdh_frames(mdh_frames, self.joint_values)
         
         # Create axes actors for each MDH frame
         for i, frame in enumerate(mdh_frames):

@@ -663,7 +663,27 @@ class URDFParser:
             mdh_frames.append(transform)
         
         return mdh_frames
-        
+
+    def update_mdh_frames(self,mdh_frames, joint_values):
+        T_i_iplus1 = []
+        for i, frame in enumerate(mdh_frames): #TO DO update_mdh_frame
+            if i >0:
+                joint = joint_values[i - 1]
+                rot_z = np.eye(4)
+                rot_z[0, 0] = math.cos(joint)
+                rot_z[1, 0] = math.sin(joint)
+                rot_z[1, 1] = math.cos(joint)
+                rot_z[0, 1] = -1 * math.sin(joint)
+                transform = np.linalg.inv(mdh_frames[i-1]) @ frame @ rot_z
+                T_i_iplus1.append(transform)
+        for i, frame in enumerate(mdh_frames):
+            if i >0:
+                mdh_frames[i] = mdh_frames[i - 1] @ T_i_iplus1[i - 1]
+        return mdh_frames
+
+
+        return 0
+
 
             
     def get_mdh_parameters(self, chain):
