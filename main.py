@@ -101,6 +101,8 @@ class URDFViewer(QMainWindow):
         self.joint_sliders = []  # List to store joint angle sliders
         self.joint_values = []  # List to store joint angle values
         self.revolute_joints = []  # List to store revolute joints
+        self.joint_value_labels = []  # List to store joint value labels
+        self.display_in_degrees = False  # False: rad, True: deg
         self.init_ui()
         
 
@@ -166,6 +168,9 @@ class URDFViewer(QMainWindow):
         btn_decomp = QPushButton("Decompose As Collision")
         btn_decomp.clicked.connect(self.decompose_collision_meshes)
 
+        btn_set_joints = QPushButton("Set Joints")
+        btn_set_joints.clicked.connect(self.open_set_joints_dialog)
+
         # Create transparency controls
         transparency_group = QGroupBox("")
         transparency_layout = QVBoxLayout()
@@ -212,6 +217,7 @@ class URDFViewer(QMainWindow):
         left_layout.addWidget(btn_edit)
         left_layout.addWidget(btn_mdh)
         left_layout.addWidget(btn_decomp)
+        left_layout.addWidget(btn_set_joints)
         
         left_layout.addWidget(transparency_group)
         left_layout.addWidget(visibility_group)
@@ -260,6 +266,12 @@ class URDFViewer(QMainWindow):
         btn_random.clicked.connect(self.randomize_joints)
         buttons_layout.addWidget(btn_reset)
         buttons_layout.addWidget(btn_random)
+        # Units toggle next to Reset/Random
+        self.units_combo = QComboBox()
+        self.units_combo.addItems(["rad", "deg"])
+        self.units_combo.setCurrentText("rad")
+        self.units_combo.currentTextChanged.connect(self.on_units_changed)
+        buttons_layout.addWidget(self.units_combo)
         joint_group_layout.addLayout(buttons_layout)
         
         joint_group_layout.addWidget(joint_scroll_area)
@@ -736,6 +748,88 @@ class URDFViewer(QMainWindow):
         dialog = MDHDialog(self, current_chain['name'], mdh_parameters)
         dialog.exec_()
 
+    def open_set_joints_dialog(self):
+        """Open a dialog to input joint angles and apply them to the robot and sliders."""
+        if not self.revolute_joints:
+            QMessageBox.warning(self, "Warning", "No revolute joints available. Load a URDF first.")
+            return
+        
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Set Joints")
+        vbox = QVBoxLayout(dialog)
+        
+        vbox.addWidget(QLabel("Enter joint angles (comma or space separated):"))
+        angles_edit = QLineEdit()
+        # Pre-fill with current values in currently selected unit for convenience
+        try:
+            current_vals = []
+            for val in (self.joint_values if self.joint_values else [0.0] * len(self.revolute_joints)):
+                if self.display_in_degrees:
+                    current_vals.append(f"{val * 180.0 / math.pi:.2f}")
+                else:
+                    current_vals.append(f"{val:.2f}")
+            angles_edit.setText(", ".join(current_vals))
+        except Exception:
+            pass
+        vbox.addWidget(angles_edit)
+        
+        units_row = QHBoxLayout()
+        units_row.addWidget(QLabel("Units:"))
+        units_combo = QComboBox()
+        units_combo.addItems(["rad", "deg"])
+        units_combo.setCurrentText("deg" if self.display_in_degrees else "rad")
+        units_row.addWidget(units_combo)
+        units_row.addStretch(1)
+        vbox.addLayout(units_row)
+        
+        buttons_row = QHBoxLayout()
+        btn_apply = QPushButton("Apply")
+        btn_cancel = QPushButton("Cancel")
+        buttons_row.addStretch(1)
+        buttons_row.addWidget(btn_cancel)
+        buttons_row.addWidget(btn_apply)
+        vbox.addLayout(buttons_row)
+        
+        def parse_and_apply():
+            raw = angles_edit.text().strip()
+            if not raw:
+                QMessageBox.warning(dialog, "Warning", "Please input angles.")
+                return
+            # Support comma or whitespace separated values
+            tokens = raw.replace(",", " ").split()
+            try:
+                vals = [float(t) for t in tokens]
+            except ValueError:
+                QMessageBox.critical(dialog, "Error", "Invalid number in input list.")
+                return
+            n = len(self.revolute_joints)
+            if len(vals) != n:
+                QMessageBox.warning(dialog, "Warning", f"Expected {n} values, got {len(vals)}.")
+                return
+            # Convert to radians if needed
+            if units_combo.currentText() == "deg":
+                vals = [v * math.pi / 180.0 for v in vals]
+            
+            # Apply to internal values and sliders (clamped to slider range)
+            # Avoid excessive re-render by blocking signals and updating once
+            for i, rad in enumerate(vals):
+                self.joint_values[i] = rad
+                target = int(round(rad * 100.0))
+                slider = self.joint_sliders[i]
+                clamped = max(slider.minimum(), min(slider.maximum(), target))
+                was_blocked = slider.blockSignals(True)
+                slider.setValue(clamped)
+                slider.blockSignals(was_blocked)
+            
+            # Refresh labels and model once
+            self.update_all_joint_value_labels()
+            self.update_model_with_joint_angles()
+            dialog.accept()
+        
+        btn_apply.clicked.connect(parse_and_apply)
+        btn_cancel.clicked.connect(dialog.reject)
+        dialog.exec_()
+
     def apply_transparency(self):
         """Apply transparency to virtual loaded models"""
         # Get transparency value from slider (convert from 0-100 to 0.0-1.0)
@@ -755,6 +849,7 @@ class URDFViewer(QMainWindow):
         
         # Initialize joint values array with zeros
         self.joint_values = [0.0] * len(self.revolute_joints)
+        self.joint_value_labels = []
         
         # Create a slider for each revolute joint
         for i, joint in enumerate(self.revolute_joints):
@@ -774,7 +869,7 @@ class URDFViewer(QMainWindow):
             slider.setTickInterval(157)  # π/2 in hundredths
             
             # Create a label to show the current value
-            value_label = QLabel("0.00")
+            value_label = QLabel(self.format_angle(0.0))
             value_label.setMinimumWidth(40)  # Set minimum width to ensure consistent alignment
             value_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # Right-align the text
             
@@ -793,6 +888,7 @@ class URDFViewer(QMainWindow):
             
             # Store the slider for later access
             self.joint_sliders.append(slider)
+            self.joint_value_labels.append(value_label)
     
     def clear_joint_sliders(self):
         """Clear all joint sliders"""
@@ -801,6 +897,7 @@ class URDFViewer(QMainWindow):
         
         # Clear the sliders list
         self.joint_sliders = []
+        self.joint_value_labels = []
         
         # Remove all widgets from the joint layout
         if hasattr(self, 'joint_layout'):
@@ -816,13 +913,30 @@ class URDFViewer(QMainWindow):
         angle = value / 100.0
         
         # Update the label
-        label.setText(f"{angle:.2f}")
+        label.setText(self.format_angle(angle))
         
         # Store the value
         self.joint_values[index] = angle
         
         # Update the model
         self.update_model_with_joint_angles()
+
+    def on_units_changed(self, text):
+        """Handle units toggle between radians and degrees for display."""
+        self.display_in_degrees = (text == "deg")
+        self.update_all_joint_value_labels()
+
+    def format_angle(self, angle_radians):
+        """Format angle for display according to current unit setting."""
+        if self.display_in_degrees:
+            return f"{angle_radians * 180.0 / math.pi:.2f}°"
+        return f"{angle_radians:.2f} rad"
+
+    def update_all_joint_value_labels(self):
+        """Refresh all joint labels to current unit."""
+        for i, label in enumerate(self.joint_value_labels):
+            if i < len(self.joint_values):
+                label.setText(self.format_angle(self.joint_values[i]))
     
     def reset_joints(self):
         """Reset all joints to zero position"""
