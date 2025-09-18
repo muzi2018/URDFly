@@ -61,7 +61,7 @@ After clicking `ok` (this will take a while to do the convex decomposition) the 
 - Required Python packages (install via pip):
 
   ```
-  pip install numpy sympy pyqt5 vtk anytree transformations
+  pip install numpy sympy pyqt5 vtk anytree transformations trimesh
   ```
 
 ## Usage
