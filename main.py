@@ -167,7 +167,7 @@ class URDFViewer(QMainWindow):
         
         btn_decomp = QPushButton("Decompose As Collision")
         btn_decomp.clicked.connect(self.decompose_collision_meshes)
-
+        ### 
         btn_set_joints = QPushButton("Set Joints")
         btn_set_joints.clicked.connect(self.open_set_joints_dialog)
 
@@ -218,7 +218,7 @@ class URDFViewer(QMainWindow):
         left_layout.addWidget(btn_mdh)
         left_layout.addWidget(btn_decomp)
         left_layout.addWidget(btn_set_joints)
-        
+        # exit()
         left_layout.addWidget(transparency_group)
         left_layout.addWidget(visibility_group)
         left_layout.addStretch()
@@ -234,7 +234,7 @@ class URDFViewer(QMainWindow):
 
         # Create VTK widget for 3D visualization with drag-and-drop support
         self.vtk_widget = DragDropVTKWidget(self)
-
+        # exit()
         # Create a scroll area for joint controls
         joint_scroll_area = QScrollArea()
         joint_scroll_area.setWidgetResizable(True)
@@ -257,7 +257,7 @@ class URDFViewer(QMainWindow):
         # Create a group box to contain the scroll area
         joint_group = QGroupBox("Joints Control")
         joint_group_layout = QVBoxLayout(joint_group)
-        
+        # exit()
         # Add reset and random buttons
         buttons_layout = QHBoxLayout()
         btn_reset = QPushButton("Reset")
@@ -275,18 +275,18 @@ class URDFViewer(QMainWindow):
         joint_group_layout.addLayout(buttons_layout)
         
         joint_group_layout.addWidget(joint_scroll_area)
-        
+        # exit()
         # Add joint group to right panel
         right_layout.addWidget(joint_group, 1)  # Give it a stretch factor of 1
         
         # Set fixed width for right panel
         right_panel.setFixedWidth(300)
-
+        # exit()
         # Add panels to main layout
         main_layout.addWidget(left_panel)
         main_layout.addWidget(self.vtk_widget, 1)
         main_layout.addWidget(right_panel)
-
+        # exit()
         # Set central widget
         self.setCentralWidget(central_widget)
 
@@ -298,6 +298,7 @@ class URDFViewer(QMainWindow):
         # Set up interactor
         self.interactor = self.vtk_widget.GetRenderWindow().GetInteractor()
 
+        # exit()
         # Configure interactor style for rotation with left mouse button
         style = vtk.vtkInteractorStyleTrackballCamera()
         self.interactor.SetInteractorStyle(style)
@@ -307,7 +308,6 @@ class URDFViewer(QMainWindow):
 
         # Add world axes for reference
         # self.add_world_axes()
-
         # Start the interactor
         self.interactor.Start()
 
@@ -1188,6 +1188,7 @@ def main():
     """Main function to run the application"""
     app = QApplication(sys.argv)
     viewer = URDFViewer()
+    
     viewer.show()
     sys.exit(app.exec_())
 
