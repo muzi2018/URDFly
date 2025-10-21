@@ -227,23 +227,23 @@ def main():
 
         # Legs (4 legs, slightly bent for stability)
         r"hip_roll_1": 0.0,
-        r"hip_pitch_1": -0.1,
-        r"knee_pitch_1": 0.3,
+        r"hip_pitch_1": -0.0,
+        r"knee_pitch_1": 0.0,
         r"contact_1_joint": 0.0,
 
         r"hip_roll_2": 0.0,
-        r"hip_pitch_2": -0.1,
-        r"knee_pitch_2": 0.3,
+        r"hip_pitch_2": -0.0,
+        r"knee_pitch_2": 0.0,
         r"contact_2_joint": 0.0,
 
         r"hip_roll_3": 0.0,
-        r"hip_pitch_3": -0.1,
-        r"knee_pitch_3": 0.3,
+        r"hip_pitch_3": -0.0,
+        r"knee_pitch_3": 0.0,
         r"contact_3_joint": 0.0,
 
         r"hip_roll_4": 0.0,
-        r"hip_pitch_4": -0.1,
-        r"knee_pitch_4": 0.3,
+        r"hip_pitch_4": -0.0,
+        r"knee_pitch_4": 0.0,
         r"contact_4_joint": 0.0,
     }
 
