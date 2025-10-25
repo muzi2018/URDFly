@@ -3,7 +3,7 @@ import pybullet_data
 import re
 from typing import Dict, Optional, Tuple
 
-class RobotHeightCalculator:
+class RobotInfoCalculator:
     """Calculate robot height in PyBullet simulation"""
     
     def __init__(self, urdf_path: str):
@@ -48,23 +48,6 @@ class RobotHeightCalculator:
         return matched_joints
         
     def get_robot_height(self) -> Tuple[float, dict]:
-        """Calculate robot height and return detailed info"""
-        if self.robot_id is None:
-            raise ValueError("Robot not loaded")
-            
-        # Get base position
-        base_pos, base_ori = p.getBasePositionAndOrientation(self.robot_id)
-        
-        # Find lowest point among all links
-        min_z = float("inf")
-        lowest_link = None
-        link_positions = {}
-        
-        # Check base link
-        if base_pos[2] < min_z:
-            min_z = base_pos[2]
-            lowest_link = "base"
-            
         # Check all other links
         num_joints = p.getNumJoints(self.robot_id)
         for j in range(num_joints):
@@ -174,81 +157,59 @@ class RobotHeightCalculator:
             'center_of_mass': overall_com,
             'link_centers_of_mass': link_coms
         }
+
+
+    def get_robot_link_length(self) -> Tuple[float, dict]:
+        # Check all other links
+        # %% Hips(to ground 91.9690) -> pelvis, pelvis - ankle = 0.7
+        base_pos, base_ori = p.getBasePositionAndOrientation(self.robot_id)
+        
+        num_joints = p.getNumJoints(self.robot_id)
+        links_state = {}  # initialize an empty dictionary
+
+        for j in range(num_joints):
+            joint_info = p.getJointInfo(self.robot_id, j)
+            link_name = joint_info[12].decode("utf-8")  # Child link name
+            
+            link_state = p.getLinkState(self.robot_id, j)
+            link_pos = link_state[4]  # world position of the URDF link frame
+            
+            links_state[link_name] = link_pos  # store in dictionary
+            # diff = np.array(base_pos) - np.array(links_state['right_ankle_roll_link'])
+
+        pass
+        
         
     def cleanup(self):
         """Disconnect from physics engine"""
         p.disconnect()
 
 
+
+
 def main():
-    # Configuration
-    # urdf_path = "/home/wang/URDFly/descriptions/urdf0924/urdf/urdf0924.urdf"
-    urdf_path = "/home/wang/URDFly/descriptions/kyon/urdf/kyon.urdf"
-    # joint_angles = {
-    #     r".*_hip_pitch_joint": -0.4,
-    #     r".*_hip_roll_joint": 0.0,
-    #     r".*_hip_yaw_joint": 0.0,
-    #     r".*_knee_joint": 0.8,
-    #     r".*_ankle_pitch_joint": -0.4,
-    #     r".*_ankle_roll_joint": 0.0,
-    #     r"torso_joint": 0.0,
-    #     r".*_shoulder_pitch_joint": -0.3,
-    #     r"right_shoulder_roll_joint": -0.2,
-    #     r"left_shoulder_roll_joint": 0.2,
-    #     r".*_shoulder_yaw_joint": 0.0,
-    #     r".*_elbow_joint": 0.1,
-    #     r".*_wrist_roll_joint": 0.0,
-    #     r".*_wrist_pitch_joint": 0.0,
-    #     r".*_wrist_yaw_joint": 0.0,
-    # }
 
+    urdf_path = "/home/wang/URDFly/descriptions/urdf0924/urdf/urdf0924.urdf"
     joint_angles = {
-        # Body base and reference
-        r"base_joint": 0.0,
-        r"imu_joint": 0.0,
-        r"reference": 0.0,
-
-        # Arms
-        r"shoulder_yaw_1": 0.0,
-        r"shoulder_pitch_1": 0.0,
-        r"elbow_pitch_1": 0.0,
-        r"wrist_pitch_1": 0.0,
-        r"wrist_yaw_1": 0.0,
-        r"dagana_1_base_joint": 0.0,
-        r"dagana_1_clamp_joint": 0.0,
-
-        r"shoulder_yaw_2": 0.0,
-        r"shoulder_pitch_2": 0.0,
-        r"elbow_pitch_2": 0.0,
-        r"wrist_pitch_2": 0.0,
-        r"wrist_yaw_2": 0.0,
-        r"dagana_2_base_joint": 0.0,
-        r"dagana_2_clamp_joint": 0.0,
-
-        # Legs (4 legs, slightly bent for stability)
-        r"hip_roll_1": 0.0,
-        r"hip_pitch_1": -0.0,
-        r"knee_pitch_1": 0.0,
-        r"contact_1_joint": 0.0,
-
-        r"hip_roll_2": 0.0,
-        r"hip_pitch_2": -0.0,
-        r"knee_pitch_2": 0.0,
-        r"contact_2_joint": 0.0,
-
-        r"hip_roll_3": 0.0,
-        r"hip_pitch_3": -0.0,
-        r"knee_pitch_3": 0.0,
-        r"contact_3_joint": 0.0,
-
-        r"hip_roll_4": 0.0,
-        r"hip_pitch_4": -0.0,
-        r"knee_pitch_4": 0.0,
-        r"contact_4_joint": 0.0,
+        r".*_hip_pitch_joint": -0.0,
+        r".*_hip_roll_joint": 0.0,
+        r".*_hip_yaw_joint": 0.0,
+        r".*_knee_joint": 0.8,
+        r".*_ankle_pitch_joint": -0.0,
+        r".*_ankle_roll_joint": 0.0,
+        r"torso_joint": 0.0,
+        r".*_shoulder_pitch_joint": -0.0,
+        r"right_shoulder_roll_joint": -0.0,
+        r"left_shoulder_roll_joint": 0.0,
+        r".*_shoulder_yaw_joint": 0.0,
+        r".*_elbow_joint": 0.0,
+        r".*_wrist_roll_joint": 0.0,
+        r".*_wrist_pitch_joint": 0.0,
+        r".*_wrist_yaw_joint": 0.0,
     }
 
     # Calculate robot properties
-    calculator = RobotHeightCalculator(urdf_path)
+    calculator = RobotInfoCalculator(urdf_path)
     # exit()
     
     try:
@@ -260,50 +221,52 @@ def main():
         for name, angle in matched_joints:
             print(f"  {name}: {angle:.3f} rad")
         
-        # Calculate height
-        height, height_details = calculator.get_robot_height()
-        print(f"\n=== HEIGHT ANALYSIS ===")
-        print(f"Robot height: {height:.3f} m")
-        print(f"Base Z position: {height_details['base_position'][2]:.3f} m")
-        print(f"Lowest point Z: {height_details['lowest_z']:.3f} m")
-        print(f"Lowest link: {height_details['lowest_link']}")
+        calculator.get_robot_link_length()
         
-        # Calculate mass
-        total_mass, mass_details = calculator.get_robot_mass()
-        print(f"\n=== MASS ANALYSIS ===")
-        print(f"Total robot mass: {total_mass:.3f} kg")
-        print(f"Heaviest link: {mass_details['heaviest_link'][0]} ({mass_details['heaviest_link'][1]:.3f} kg)")
-        print(f"Lightest link: {mass_details['lightest_link'][0]} ({mass_details['lightest_link'][1]:.3f} kg)")
+        # # Calculate height
+        # height, height_details = calculator.get_robot_height()
+        # print(f"\n=== HEIGHT ANALYSIS ===")
+        # print(f"Robot height: {height:.3f} m")
+        # print(f"Base Z position: {height_details['base_position'][2]:.3f} m")
+        # print(f"Lowest point Z: {height_details['lowest_z']:.3f} m")
+        # print(f"Lowest link: {height_details['lowest_link']}")
         
-        # Show mass distribution for key components
-        print(f"\nKey component masses:")
-        for link_name, mass in mass_details['link_masses'].items():
-            if mass > 0.1:  # Only show links with significant mass
-                print(f"  {link_name}: {mass:.3f} kg")
+        # # Calculate mass
+        # total_mass, mass_details = calculator.get_robot_mass()
+        # print(f"\n=== MASS ANALYSIS ===")
+        # print(f"Total robot mass: {total_mass:.3f} kg")
+        # print(f"Heaviest link: {mass_details['heaviest_link'][0]} ({mass_details['heaviest_link'][1]:.3f} kg)")
+        # print(f"Lightest link: {mass_details['lightest_link'][0]} ({mass_details['lightest_link'][1]:.3f} kg)")
         
-        # Calculate center of mass
-        com, com_details = calculator.get_robot_center_of_mass()
-        print(f"\n=== CENTER OF MASS ANALYSIS ===")
-        print(f"Overall COM: ({com[0]:.3f}, {com[1]:.3f}, {com[2]:.3f}) m")
-        print(f"COM height above ground: {com[2] - height_details['lowest_z']:.3f} m")
-        print(f"COM height ratio (COM/total_height): {(com[2] - height_details['lowest_z']) / height:.2%}")
+        # # Show mass distribution for key components
+        # print(f"\nKey component masses:")
+        # for link_name, mass in mass_details['link_masses'].items():
+        #     if mass > 0.1:  # Only show links with significant mass
+        #         print(f"  {link_name}: {mass:.3f} kg")
         
-        # Stability analysis
-        base_pos = height_details['base_position']
-        com_offset_x = abs(com[0] - base_pos[0])
-        com_offset_y = abs(com[1] - base_pos[1])
-        print(f"\n=== STABILITY ANALYSIS ===")
-        print(f"COM horizontal offset from base:")
-        print(f"  X-axis: {com_offset_x:.3f} m")
-        print(f"  Y-axis: {com_offset_y:.3f} m")
-        print(f"  Total horizontal offset: {(com_offset_x**2 + com_offset_y**2)**0.5:.3f} m")
+        # # Calculate center of mass
+        # com, com_details = calculator.get_robot_center_of_mass()
+        # print(f"\n=== CENTER OF MASS ANALYSIS ===")
+        # print(f"Overall COM: ({com[0]:.3f}, {com[1]:.3f}, {com[2]:.3f}) m")
+        # print(f"COM height above ground: {com[2] - height_details['lowest_z']:.3f} m")
+        # print(f"COM height ratio (COM/total_height): {(com[2] - height_details['lowest_z']) / height:.2%}")
         
-        # Summary
-        print(f"\n=== SUMMARY ===")
-        print(f"Robot: {urdf_path.split('/')[-1]}")
-        print(f"Total mass: {total_mass:.2f} kg")
-        print(f"Height: {height:.2f} m")
-        print(f"Mass-to-height ratio: {total_mass/height:.2f} kg/m")
+        # # Stability analysis
+        # base_pos = height_details['base_position']
+        # com_offset_x = abs(com[0] - base_pos[0])
+        # com_offset_y = abs(com[1] - base_pos[1])
+        # print(f"\n=== STABILITY ANALYSIS ===")
+        # print(f"COM horizontal offset from base:")
+        # print(f"  X-axis: {com_offset_x:.3f} m")
+        # print(f"  Y-axis: {com_offset_y:.3f} m")
+        # print(f"  Total horizontal offset: {(com_offset_x**2 + com_offset_y**2)**0.5:.3f} m")
+        
+        # # Summary
+        # print(f"\n=== SUMMARY ===")
+        # print(f"Robot: {urdf_path.split('/')[-1]}")
+        # print(f"Total mass: {total_mass:.2f} kg")
+        # print(f"Height: {height:.2f} m")
+        # print(f"Mass-to-height ratio: {total_mass/height:.2f} kg/m")
         
     finally:
         calculator.cleanup()
