@@ -148,7 +148,7 @@ class RobotInfoCalculator:
             for i in range(3):
                 weighted_com[i] += link_mass * world_com[i]
             link_coms[link_name] = world_com
-        
+        print("total mass: ", total_mass)
         # Calculate overall COM
         overall_com = tuple(weighted_com[i] / total_mass for i in range(3))
         
@@ -245,7 +245,7 @@ def main():
         #         print(f"  {link_name}: {mass:.3f} kg")
         
         # # Calculate center of mass
-        # com, com_details = calculator.get_robot_center_of_mass()
+        com, com_details = calculator.get_robot_center_of_mass()
         # print(f"\n=== CENTER OF MASS ANALYSIS ===")
         # print(f"Overall COM: ({com[0]:.3f}, {com[1]:.3f}, {com[2]:.3f}) m")
         # print(f"COM height above ground: {com[2] - height_details['lowest_z']:.3f} m")
