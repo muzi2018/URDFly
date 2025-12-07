@@ -125,15 +125,15 @@
                 <geom type="mesh" rgba="0.89804 0.91765 0.92941 1" mesh="right_elbow_link"/>
                 <body name="right_wrist_yaw_link" pos="0 0 -0.15">
                   <inertial pos="-1.646e-05 0.00737366 -0.0455397" quat="0.919455 0.393195 6.19166e-05 0.000307759" mass="0.451932" diaginertia="0.00020664 0.000153219 0.000125371"/>
-                  <joint name="right_wrist_yaw_joint" type="hinge" limited="true" pos="0 0 0" axis="0 0 1" range="-1.78 2.058" actuatorfrcrange="-5 5" stiffness="16.778327481" damping="1.068141502" armature="0.00425"/>
+                  <joint name="right_wrist_yaw_joint" type="hinge" limited="true" pos="0 0 0" axis="0 0 1" range="-1.78 2.058" actuatorfrcrange="-25 25" stiffness="16.778327481" damping="1.068141502" armature="0.00425"/>
                   <geom type="mesh" rgba="0.89804 0.91765 0.92941 1" mesh="right_wrist_yaw_link"/>
                   <body name="right_wrist_pitch_link" pos="0 0 -0.05">
                     <inertial pos="-0.0011899 -0.00027149 -0.0636384" quat="0.98046 0.196355 0.0116468 -0.00279919" mass="0.54072" diaginertia="0.000330067 0.000256918 0.000225035"/>
-                    <joint name="right_wrist_pitch_joint" type="hinge" limited="true" pos="0 0 0" axis="0 1 0" range="-1.57 1.57" actuatorfrcrange="-5 5" stiffness="16.778327481" damping="1.068141502" armature="0.00425"/>
+                    <joint name="right_wrist_pitch_joint" type="hinge" limited="true" pos="0 0 0" axis="0 1 0" range="-1.57 1.57" actuatorfrcrange="-25 25" stiffness="16.778327481" damping="1.068141502" armature="0.00425"/>
                     <geom type="mesh" rgba="0.89804 0.91765 0.92941 1" mesh="right_wrist_pitch_link"/>
                     <body name="right_wrist_roll_link" pos="0.0285 0 -0.0675">
                       <inertial pos="-0.024589 0.0024972 -0.12051" quat="0.574878 -0.00165011 0.00272716 0.818233" mass="0.35639" diaginertia="0.00126192 0.00108722 0.000293052"/>
-                      <joint name="right_wrist_roll_joint" type="hinge" limited="true" pos="0 0 0" axis="1 0 0" range="-1.57 1.57" actuatorfrcrange="-5 5" stiffness="14.250623098" damping="0.907222843" armature="0.003609725"/>
+                      <joint name="right_wrist_roll_joint" type="hinge" limited="true" pos="0 0 0" axis="1 0 0" range="-1.57 1.57" actuatorfrcrange="-25 25" stiffness="14.250623098" damping="0.907222843" armature="0.003609725"/>
                       <geom type="mesh" rgba="0.89804 0.91765 0.92941 1" mesh="right_wrist_roll_link"/>
                     </body>
                   </body>
@@ -160,15 +160,15 @@
                 <geom type="mesh" rgba="0.89804 0.91765 0.92941 1" mesh="left_elbow_link"/>
                 <body name="left_wrist_yaw_link" pos="0 0 -0.15">
                   <inertial pos="-1.531e-05 0.00737366 -0.0455346" quat="0.91917 0.393861 0.000801173 -0.000117155" mass="0.451932" diaginertia="0.00020657 0.000153221 0.000125388"/>
-                  <joint name="left_wrist_yaw_joint" type="hinge" limited="true" pos="0 0 0" axis="0 0 1" range="-2.058 1.78" actuatorfrcrange="-5 5" stiffness="16.778327481" damping="1.068141502" armature="0.00425"/>
+                  <joint name="left_wrist_yaw_joint" type="hinge" limited="true" pos="0 0 0" axis="0 0 1" range="-2.058 1.78" actuatorfrcrange="-25 25" stiffness="16.778327481" damping="1.068141502" armature="0.00425"/>
                   <geom type="mesh" rgba="0.89804 0.91765 0.92941 1" mesh="left_wrist_yaw_link"/>
                   <body name="left_wrist_pitch_link" pos="0 0 -0.05">
                     <inertial pos="-0.00119417 -0.00012506 -0.0638523" quat="0.990492 0.137568 3.66783e-05 0.00047405" mass="0.538786" diaginertia="0.00031816 0.000245662 0.000224228"/>
-                    <joint name="left_wrist_pitch_joint" type="hinge" limited="true" pos="0 0 0" axis="0 1 0" range="-1.57 1.57" actuatorfrcrange="-5 5" stiffness="16.778327481" damping="1.068141502" armature="0.00425"/>
+                    <joint name="left_wrist_pitch_joint" type="hinge" limited="true" pos="0 0 0" axis="0 1 0" range="-1.57 1.57" actuatorfrcrange="-25 25" stiffness="16.778327481" damping="1.068141502" armature="0.00425"/>
                     <geom type="mesh" rgba="0.89804 0.91765 0.92941 1" mesh="left_wrist_pitch_link"/>
                     <body name="left_wrist_roll_link" pos="0.0285 0 -0.0675">
                       <inertial pos="-0.0235854 -0.0022733 -0.11365" quat="0.79681 0.0177167 0.0221392 0.603565" mass="0.327277" diaginertia="0.0010679 0.000890452 0.000270704"/>
-                      <joint name="left_wrist_roll_joint" type="hinge" limited="true" pos="0 0 0" axis="1 0 0" range="-1.57 1.57" actuatorfrcrange="-5 5" stiffness="14.250623098" damping="0.907222843" armature="0.003609725"/>
+                      <joint name="left_wrist_roll_joint" type="hinge" limited="true" pos="0 0 0" axis="1 0 0" range="-1.57 1.57" actuatorfrcrange="-25 25" stiffness="14.250623098" damping="0.907222843" armature="0.003609725"/>
                       <geom type="mesh" rgba="0.89804 0.91765 0.92941 1" mesh="left_wrist_roll_link"/>
                     </body>
                   </body>
