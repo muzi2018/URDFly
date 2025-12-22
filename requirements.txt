@@ -1,3 +1,0 @@
-anytree
-trimesh
-transformations
