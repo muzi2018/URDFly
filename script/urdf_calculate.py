@@ -1,8 +1,7 @@
 ﻿import mujoco
 
 # Load model
-model = mujoco.MjModel.from_xml_path("/home/wang/workspace/URDFly/descriptions"
-                                     "/SEAG_2_URDF/urdf/SEAG_2_URDF.urdf")
+model = mujoco.MjModel.from_xml_path("/home/wang/workspace/URDFly/descriptions/QuantaQ/urdf/QuantaQv1.5.urdf")
 
 print("---- All link masses ----")
 

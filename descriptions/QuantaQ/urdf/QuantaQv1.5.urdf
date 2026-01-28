@@ -1,0 +1,1157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="QuantaQv1.5">
+
+  <mujoco>
+    <compiler 
+    meshdir="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes" 
+    balanceinertia="true" 
+    discardvisual="false" />
+  </mujoco>
+
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="0.01214306 0.00112291 -0.05842374"
+        rpy="0 0 0" />
+      <mass
+        value="22.80017876" />
+      <inertia
+        ixx="0.19297637"
+        ixy="0.00018527"
+        ixz="-0.0170434"
+        iyy="0.78163683"
+        iyz="7.642E-05"
+        izz="0.8824961" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.86667 0.9098 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="RR_HIP_LINK">
+    <inertial>
+      <origin
+        xyz="0.00295817 0.00499941 0.00019676"
+        rpy="0 0 0" />
+      <mass
+        value="2.47557421" />
+      <inertia
+        ixx="0.00332905"
+        ixy="3.849E-05"
+        ixz="-2.562E-05"
+        iyy="0.00440449"
+        iyz="6.73E-06"
+        izz="0.00443399" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/RR_HIP_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.86667 0.9098 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/RR_HIP_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="RR_HIP_JOINT"
+    type="revolute">
+    <origin
+      xyz="-0.30644 -0.075 -0.063"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="RR_HIP_LINK" />
+    <axis
+      xyz="-1 0 0" />
+    <limit
+      lower="-1.012"
+      upper="1.012"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="RR_THIGH_LINK">
+    <inertial>
+      <origin
+        xyz="-0.00166014 -0.02511237 -0.0281201"
+        rpy="0 0 0" />
+      <mass
+        value="3.71337577" />
+      <inertia
+        ixx="0.02953205"
+        ixy="0.00015247"
+        ixz="-0.00167176"
+        iyy="0.02384819"
+        iyz="0.00265263"
+        izz="0.01141092" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/RR_THIGH_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.86667 0.9098 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/RR_THIGH_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="RR_THIGH_JOINT"
+    type="revolute">
+    <origin
+      xyz="0 -0.124999999999999 0"
+      rpy="0 0 0" />
+    <parent
+      link="RR_HIP_LINK" />
+    <child
+      link="RR_THIGH_LINK" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-2.356"
+      upper="3.142"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="RR_CALF_LINK">
+    <inertial>
+      <origin
+        xyz="0.00221542 -9.988E-05 -0.14324363"
+        rpy="0 0 0" />
+      <mass
+        value="0.28491855" />
+      <inertia
+        ixx="0.00684148"
+        ixy="-5E-08"
+        ixz="-8.872E-05"
+        iyy="0.00690718"
+        iyz="-5.7E-07"
+        izz="0.00011156" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/RR_CALF_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/RR_CALF_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="RR_CALF_JOINT"
+    type="revolute">
+    <origin
+      xyz="0.00172786806436864 0 -0.329995476441651"
+      rpy="0 0 0" />
+    <parent
+      link="RR_THIGH_LINK" />
+    <child
+      link="RR_CALF_LINK" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="0.3931"
+      upper="2.813"
+      effort="1"
+      velocity="1" />
+  </joint>
+  <link
+    name="LR_HIP_LINK">
+    <inertial>
+      <origin
+        xyz="0.00275246 -0.00502476 -8.166E-05"
+        rpy="0 0 0" />
+      <mass
+        value="2.46443766" />
+      <inertia
+        ixx="0.00331321"
+        ixy="-3.208E-05"
+        ixz="-1.11E-06"
+        iyy="0.00433144"
+        iyz="2.19E-06"
+        izz="0.00437462" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/LR_HIP_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.86667 0.9098 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/LR_HIP_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="LR_HIP_JOINT"
+    type="revolute">
+    <origin
+      xyz="-0.30644 0.075 -0.063"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="LR_HIP_LINK" />
+    <axis
+      xyz="-1 0 0" />
+    <limit
+      lower="-1.012"
+      upper="1.012"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="LR_THIGH_LINK">
+    <inertial>
+      <origin
+        xyz="-0.00172713 0.02582573 -0.02522633"
+        rpy="0 0 0" />
+      <mass
+        value="3.61041371" />
+      <inertia
+        ixx="0.02703474"
+        ixy="-0.00015375"
+        ixz="-0.00170387"
+        iyy="0.02141632"
+        iyz="-0.00238453"
+        izz="0.0113434" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/LR_THIGH_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.86667 0.9098 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/LR_THIGH_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="LR_THIGH_JOINT"
+    type="revolute">
+    <origin
+      xyz="0 0.125000000000002 0"
+      rpy="0 0 0" />
+    <parent
+      link="LR_HIP_LINK" />
+    <child
+      link="LR_THIGH_LINK" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-2.356"
+      upper="3.142"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="LR_CALF_LINK">
+    <inertial>
+      <origin
+        xyz="0.00625776 0.00010653 -0.14444826"
+        rpy="0 0 0" />
+      <mass
+        value="0.52805242" />
+      <inertia
+        ixx="0.00759976"
+        ixy="3.4E-07"
+        ixz="-0.0001302"
+        iyy="0.00767861"
+        iyz="-1.27E-06"
+        izz="0.0001313" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/LR_CALF_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/LR_CALF_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="LR_CALF_JOINT"
+    type="revolute">
+    <origin
+      xyz="0.00172786806437109 0 -0.329995476441635"
+      rpy="0 0 0" />
+    <parent
+      link="LR_THIGH_LINK" />
+    <child
+      link="LR_CALF_LINK" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="0.3931"
+      upper="2.813"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="FL_HIP_LINK">
+    <inertial>
+      <origin
+        xyz="-0.00227841 -0.00506132 0.00015016"
+        rpy="0 0 0" />
+      <mass
+        value="2.4452945" />
+      <inertia
+        ixx="0.00332465"
+        ixy="3.034E-05"
+        ixz="2.506E-05"
+        iyy="0.00429107"
+        iyz="6.55E-06"
+        izz="0.0043163" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/FL_HIP_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.86667 0.9098 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/FL_HIP_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="FL_HIP_JOINT"
+    type="revolute">
+    <origin
+      xyz="0.31846 0.075 -0.063"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="FL_HIP_LINK" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-1.012"
+      upper="1.012"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="FL_THIGH_LINK">
+    <inertial>
+      <origin
+        xyz="-0.00175885 0.02587293 -0.02534079"
+        rpy="0 0 0" />
+      <mass
+        value="3.60382701" />
+      <inertia
+        ixx="0.02700423"
+        ixy="-0.00016137"
+        ixz="-0.00170089"
+        iyy="0.02138977"
+        iyz="-0.0023954"
+        izz="0.01133853" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/FL_THIGH_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.86667 0.9098 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/FL_THIGH_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="FL_THIGH_JOINT"
+    type="revolute">
+    <origin
+      xyz="0.000100000000000822 0.125000000000001 0"
+      rpy="0 0 0" />
+    <parent
+      link="FL_HIP_LINK" />
+    <child
+      link="FL_THIGH_LINK" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-2.356"
+      upper="3.142"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="FL_CALF_LINK">
+    <inertial>
+      <origin
+        xyz="0.00654165 -0.00029693 -0.15100124"
+        rpy="0 0 0" />
+      <mass
+        value="0.50513663" />
+      <inertia
+        ixx="0.00709653"
+        ixy="-9.9E-07"
+        ixz="-0.00015185"
+        iyy="0.00717507"
+        iyz="2.95E-05"
+        izz="0.00012698" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/FL_CALF_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/FL_CALF_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="FL_CALF_JOINT"
+    type="revolute">
+    <origin
+      xyz="0.00172786806436959 0 -0.329995476441636"
+      rpy="0 0 0" />
+    <parent
+      link="FL_THIGH_LINK" />
+    <child
+      link="FL_CALF_LINK" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="0.3931"
+      upper="2.813"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="FR_HIP_LINK">
+    <inertial>
+      <origin
+        xyz="-0.00262771 0.005022 9.09E-06"
+        rpy="0 0 0" />
+      <mass
+        value="2.46443766" />
+      <inertia
+        ixx="0.00331297"
+        ixy="-3.25E-05"
+        ixz="-2.77E-06"
+        iyy="0.00433136"
+        iyz="6.83E-06"
+        izz="0.004375" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/FR_HIP_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.86667 0.9098 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/FR_HIP_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="FR_HIP_JOINT"
+    type="revolute">
+    <origin
+      xyz="0.31846 -0.075 -0.063"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="FR_HIP_LINK" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-1.012"
+      upper="1.012"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="FR_THIGH_LINK">
+    <inertial>
+      <origin
+        xyz="-0.001661 -0.02504656 -0.02812125"
+        rpy="0 0 0" />
+      <mass
+        value="3.71337577" />
+      <inertia
+        ixx="0.0295105"
+        ixy="0.00015184"
+        ixz="-0.0016716"
+        iyy="0.0238471"
+        iyz="0.00264546"
+        izz="0.01138962" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/FR_THIGH_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.75294 0.75294 0.75294 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/FR_THIGH_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="FR_THIGH_JOINT"
+    type="revolute">
+    <origin
+      xyz="9.99999999973245E-05 -0.125 0"
+      rpy="0 0 0" />
+    <parent
+      link="FR_HIP_LINK" />
+    <child
+      link="FR_THIGH_LINK" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-2.356"
+      upper="3.142"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="FR_CALF_LINK">
+    <inertial>
+      <origin
+        xyz="0.00219942 -0.00016481 -0.14203724"
+        rpy="0 0 0" />
+      <mass
+        value="0.2868384" />
+      <inertia
+        ixx="0.00690366"
+        ixy="-9E-08"
+        ixz="-8.79E-05"
+        iyy="0.00696922"
+        iyz="2.77E-06"
+        izz="0.00011181" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/FR_CALF_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.79216 0.81961 0.93333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/FR_CALF_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="FR_CALF_LINK"
+    type="revolute">
+    <origin
+      xyz="0.00172786806436864 0 -0.329995476441651"
+      rpy="0 0 0" />
+    <parent
+      link="FR_THIGH_LINK" />
+    <child
+      link="FR_CALF_LINK" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="0.3931"
+      upper="2.813"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="ShoulderPitch_LINK">
+    <inertial>
+      <origin
+        xyz="-4.803E-05 0 0.05350224"
+        rpy="0 0 0" />
+      <mass
+        value="1.70086699" />
+      <inertia
+        ixx="0.0052978"
+        ixy="0"
+        ixz="-4.4E-07"
+        iyy="0.00137035"
+        iyz="-1.02E-06"
+        izz="0.00508768" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/ShoulderPitch_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/ShoulderPitch_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="ShoulderPitch_JOINT"
+    type="revolute">
+    <origin
+      xyz="0.18056067470714 0 0.088"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="ShoulderPitch_LINK" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      lower="-2.8798"
+      upper="2.8798"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="ShoulderRoll_LINK">
+    <inertial>
+      <origin
+        xyz="-0.25123379 -0.00589197 1.808E-05"
+        rpy="0 0 0" />
+      <mass
+        value="1.37090984" />
+      <inertia
+        ixx="0.0013645"
+        ixy="-0.00079599"
+        ixz="2.19E-06"
+        iyy="0.02613567"
+        iyz="-8.6E-07"
+        izz="0.02643696" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/ShoulderRoll_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.86667 0.9098 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/ShoulderRoll_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="ShoulderRoll_JOINT"
+    type="revolute">
+    <origin
+      xyz="0 0 0.0600000000001248"
+      rpy="0 0 0" />
+    <parent
+      link="ShoulderPitch_LINK" />
+    <child
+      link="ShoulderRoll_LINK" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="0"
+      upper="3.1416"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="ShoulderYaw_LINK">
+    <inertial>
+      <origin
+        xyz="0.08786669 -0.00153267 0.06864865"
+        rpy="0 0 0" />
+      <mass
+        value="1.305809" />
+      <inertia
+        ixx="0.00257285"
+        ixy="-0.00017464"
+        ixz="-0.00135164"
+        iyy="0.00579257"
+        iyz="-0.00013295"
+        izz="0.00534665" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/ShoulderYaw_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.86667 0.9098 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/ShoulderYaw_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="ShoulderYaw_JOINT"
+    type="revolute">
+    <origin
+      xyz="-0.35 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="ShoulderRoll_LINK" />
+    <child
+      link="ShoulderYaw_LINK" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-3.316"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="Elbow_LINK">
+    <inertial>
+      <origin
+        xyz="0.09700925 -0.00624836 3.277E-05"
+        rpy="0 0 0" />
+      <mass
+        value="0.97865462" />
+      <inertia
+        ixx="0.0007782"
+        ixy="4.789E-05"
+        ixz="-2.4E-07"
+        iyy="0.00133037"
+        iyz="-6.9E-07"
+        izz="0.00137196" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/Elbow_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.86667 0.9098 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/Elbow_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="Elbow_JOINT"
+    type="revolute">
+    <origin
+      xyz="0.155000000001192 0 0.0799999999984064"
+      rpy="0 0 0" />
+    <parent
+      link="ShoulderYaw_LINK" />
+    <child
+      link="Elbow_LINK" />
+    <axis
+      xyz="-1 0 0" />
+    <limit
+      lower="-2.8623"
+      upper="2.8623"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="WristYaw_LINK">
+    <inertial>
+      <origin
+        xyz="0.08027829 -0.00729721 -0.00023094"
+        rpy="0 0 0" />
+      <mass
+        value="0.9862891" />
+      <inertia
+        ixx="0.00097534"
+        ixy="-0.00051932"
+        ixz="1.92E-06"
+        iyy="0.00168313"
+        iyz="1.53E-06"
+        izz="0.00190236" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/WristYaw_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.86667 0.9098 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/WristYaw_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="WristYaw_JOINT"
+    type="revolute">
+    <origin
+      xyz="0.105 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="Elbow_LINK" />
+    <child
+      link="WristYaw_LINK" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-2.0769"
+      upper="2.0769"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="WristPitch_LINK">
+    <inertial>
+      <origin
+        xyz="0.05432735 0.00042603 -0.00398151"
+        rpy="0 0 0" />
+      <mass
+        value="0.28706364" />
+      <inertia
+        ixx="0.00016267"
+        ixy="5.3E-07"
+        ixz="4.816E-05"
+        iyy="0.00050017"
+        iyz="-3E-07"
+        izz="0.00051352" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/WristPitch_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.86667 0.9098 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/WristPitch_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="WristPitch_JOINT"
+    type="revolute">
+    <origin
+      xyz="0.12299962444849 0 -0.000303949800137315"
+      rpy="0 0 0" />
+    <parent
+      link="WristYaw_LINK" />
+    <child
+      link="WristPitch_LINK" />
+    <axis
+      xyz="-0.999996946737325 0 0.00247113658638343" />
+    <limit
+      lower="-2.8623"
+      upper="2.8623"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="WristRoll_LINK">
+    <inertial>
+      <origin
+        xyz="0.06221541 -0.00241101 0.01650902"
+        rpy="0 0 0" />
+      <mass
+        value="0.12705328" />
+      <inertia
+        ixx="5.702E-05"
+        ixy="-1.662E-05"
+        ixz="5.45E-06"
+        iyy="0.00010586"
+        iyz="-3.04E-06"
+        izz="0.00063418" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/WristRoll_LINK.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="/home/wang/workspace/URDFly/descriptions/QuantaQ/meshes/WristRoll_LINK.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="WristRoll_JOINT"
+    type="revolute">
+    <origin
+      xyz="0.0499998473368665 0 -0.000123556829319749"
+      rpy="0 0 0" />
+    <parent
+      link="WristPitch_LINK" />
+    <child
+      link="WristRoll_LINK" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="-1.1868"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+</robot>
